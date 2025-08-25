@@ -305,6 +305,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import type { Category } from '../types/Category';
+import { categoryStore } from '../stores/categoryStore';
 
 const form = reactive({
     amount: '',
@@ -314,11 +315,7 @@ const form = reactive({
     categoryId: '',
 });
 
-const categories = ref<Category[]>([
-    { id: 1, name: 'Housing' },
-    { id: 2, name: 'Transportation' },
-    { id: 3, name: 'Food & Dining' },
-]);
+const categories = ref<Category[]>(categoryStore.mockDataCategory);
 const isSubmitting = ref(false);
 const error = ref('');
 const success = ref(false);
