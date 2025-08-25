@@ -5,6 +5,10 @@ import url from 'node:url'
 
 export default {
   path: path.dirname(url.fileURLToPath(import.meta.url)) + '/../', // for AdonisJS v6
+  controllersPath: path.join(
+    path.dirname(url.fileURLToPath(import.meta.url)),
+    '../app/controllers'
+  ),
   title: 'Mini-Expense-Tracker',
   version: '1.0.0', // use info instead
   description: 'API docs for mini expense tracker', // use info instead
