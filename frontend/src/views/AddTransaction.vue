@@ -315,8 +315,9 @@ const form = reactive({
 });
 
 const categories = ref<Category[]>([
-    { id: 1, name: 'CAD' },
-    { id: 2, name: 'USD' },
+    { id: 1, name: 'Housing' },
+    { id: 2, name: 'Transportation' },
+    { id: 3, name: 'Food & Dining' },
 ]);
 const isSubmitting = ref(false);
 const error = ref('');
