@@ -58,18 +58,47 @@ export default class TransactionService {
    * Get category balances
    */
   async getCategoryBalances() {
-    const balances = await db
+    // First get all transactions grouped by category
+    const transactions = await db
       .from('transactions')
       .join('categories', 'transactions.category_id', 'categories.id')
-      .select('categories.name as categoryName')
-      .sum('transactions.amount as total')
-      .groupBy('categories.name')
-      .orderBy('total', 'desc')
+      .select(
+        'transactions.id',
+        'transactions.amount',
+        'transactions.currency',
+        'transactions.date',
+        'transactions.description',
+        'transactions.category_id as categoryId',
+        'categories.name as categoryName',
+        'transactions.created_at as createdAt',
+        'transactions.updated_at as updatedAt'
+      )
+      .orderBy('transactions.created_at', 'desc')
 
-    // Convert string totals to numbers
-    return balances.map((balance) => ({
-      ...balance,
-      total: parseFloat(balance.total),
-    }))
+    // Group transactions by category
+    const groupedByCategory = transactions.reduce(
+      (acc, transaction) => {
+        const categoryId = transaction.categoryId
+        if (!acc[categoryId]) {
+          acc[categoryId] = {
+            categoryId,
+            transactions: [],
+            total: 0,
+          }
+        }
+
+        acc[categoryId].transactions.push({
+          ...transaction,
+          amount: parseFloat(transaction.amount),
+        })
+        acc[categoryId].total += parseFloat(transaction.amount)
+
+        return acc
+      },
+      {} as Record<number, { categoryId: number; transactions: any[]; total: number }>
+    )
+
+    // Convert to array and sort by total descending
+    return Object.values(groupedByCategory).sort((a, b) => (b as any).total - (a as any).total)
   }
 }
