@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import AddTransaction from '../views/AddTransaction.vue';
 import TransactionList from '../views/TransactionList.vue';
+import CategoryBalance from '../views/CategoryBalance.vue';
 
 const routes = [
     {
@@ -16,6 +17,11 @@ const routes = [
         path: '/add',
         name: 'AddTransaction',
         component: AddTransaction,
+    },
+    {
+        path: '/balance',
+        name: 'CategoryBalance',
+        component: CategoryBalance,
     },
 ];
 

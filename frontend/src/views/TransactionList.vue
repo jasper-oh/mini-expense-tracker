@@ -271,47 +271,11 @@
 import { computed, ref } from 'vue';
 import type { Transaction } from '../types/Transaction';
 import type { Category } from '../types/Category';
+import { transactionStore } from '../stores/transactionStore';
+import { categoryStore } from '../stores/categoryStore';
 
-const transactions = ref<Transaction[]>([
-    {
-        id: 1,
-        amount: 25.5,
-        currency: 'CAD',
-        date: '2025-08-24T14:30:00Z',
-        description: 'Lunch at Cafe',
-        categoryId: 1,
-        categoryName: 'Food & Dining',
-        createdAt: '2025-08-24T14:31:00Z',
-        updatedAt: '2025-08-24T14:31:00Z',
-    },
-    {
-        id: 2,
-        amount: 50,
-        currency: 'CAD',
-        date: '2025-08-23T10:00:00Z',
-        description: 'Monthly Metro Pass',
-        categoryId: 2,
-        categoryName: 'Transportation',
-        createdAt: '2025-08-23T10:01:00Z',
-        updatedAt: '2025-08-23T10:01:00Z',
-    },
-    {
-        id: 3,
-        amount: 2000,
-        currency: 'CAD',
-        date: '2025-08-22T09:00:00Z',
-        description: 'Monthly housing pay',
-        categoryId: 9,
-        categoryName: 'Housing',
-        createdAt: '2025-08-22T09:01:00Z',
-        updatedAt: '2025-08-22T09:01:00Z',
-    },
-]);
-const categories = ref<Category[]>([
-    { id: 1, name: 'Housing' },
-    { id: 2, name: 'Transportation' },
-    { id: 3, name: 'Food & Dining' },
-]);
+const transactions = ref<Transaction[]>(transactionStore.mockDataTransaction);
+const categories = ref<Category[]>(categoryStore.mockDataCategory);
 const searchQuery = ref('');
 const selectedCategory = ref('');
 const sortBy = ref('date');
