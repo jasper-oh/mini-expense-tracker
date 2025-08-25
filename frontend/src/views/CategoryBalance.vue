@@ -234,109 +234,13 @@
             </div>
         </div>
 
-        <!-- Detailed Transactions Modal -->
-        <div
-            v-if="showTransactionsModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            @click="closeTransactionsModal"
-        >
-            <div
-                class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden"
-                @click.stop
-            >
-                <div
-                    class="px-6 py-4 border-b border-gray-200 flex justify-between items-center"
-                >
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        Transactions for {{ selectedCategoryName }}
-                    </h3>
-                    <button
-                        @click="closeTransactionsModal"
-                        class="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                        <svg
-                            class="w-6 h-6"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            ></path>
-                        </svg>
-                    </button>
-                </div>
-                <div class="overflow-y-auto max-h-[60vh]">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50 sticky top-0">
-                            <tr>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Date
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Description
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Amount
-                                </th>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
-                                    Currency
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr
-                                v-for="transaction in categoryTransactions"
-                                :key="transaction.id"
-                            >
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                >
-                                    {{ formatDate(transaction.date) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    {{ transaction.description }}
-                                </td>
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600"
-                                >
-                                    {{ formatAmount(transaction.amount) }}
-                                </td>
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                >
-                                    {{ transaction.currency }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600">
-                            Total: {{ formatAmount(categoryTransactionsTotal) }}
-                        </span>
-                        <button
-                            @click="closeTransactionsModal"
-                            class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                        >
-                            Close
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Transactions Modal Component -->
+        <TransactionsModal
+            :is-visible="showTransactionsModal"
+            :category-name="selectedCategoryName"
+            :transactions="categoryTransactions"
+            @close="closeTransactionsModal"
+        />
     </div>
 </template>
 
@@ -348,6 +252,7 @@ import type { Category } from '../types/Category';
 import type { Transaction } from '../types/Transaction';
 import { categoryStore } from '../stores/categoryStore';
 import { transactionStore } from '../stores/transactionStore';
+import TransactionsModal from '../components/TransactionsModal.vue';
 
 interface Filters {
     startDate: string;
@@ -410,13 +315,6 @@ const totalBalance = computed(() => {
 const averagePerCategory = computed(() => {
     if (filteredBalances.value.length === 0) return 0;
     return totalBalance.value / filteredBalances.value.length;
-});
-
-const categoryTransactionsTotal = computed(() => {
-    return categoryTransactions.value.reduce(
-        (sum, transaction) => sum + transaction.amount,
-        0
-    );
 });
 
 // Chart configuration
@@ -511,10 +409,6 @@ const getChartColor = (categoryName: string): string => {
 // Methods
 const formatAmount = (amount: number): string => {
     return Math.abs(amount).toFixed(2);
-};
-
-const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString();
 };
 
 const calculatePercentage = (amount: number): string => {
