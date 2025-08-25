@@ -59,7 +59,7 @@
                     >
                         <option value="">All Categories</option>
                         <option
-                            v-for="category in categories"
+                            v-for="category in categoryStore.categories"
                             :key="category.id"
                             :value="category.id"
                         >
@@ -185,11 +185,9 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr
                                 v-for="balance in filteredBalances"
-                                :key="balance.categoryName"
+                                :key="balance.categoryId"
                                 @click="
-                                    showCategoryTransactions(
-                                        balance.categoryName
-                                    )
+                                    showCategoryTransactions(balance.categoryId)
                                 "
                                 class="cursor-pointer hover:bg-gray-50 transition-colors"
                             >
@@ -199,14 +197,20 @@
                                             class="w-3 h-3 rounded-full mr-3"
                                             :class="
                                                 getCategoryColor(
-                                                    balance.categoryName
+                                                    getCategoryName(
+                                                        balance.categoryId
+                                                    )
                                                 )
                                             "
                                         ></div>
                                         <span
                                             class="text-sm font-medium text-gray-900"
                                         >
-                                            {{ balance.categoryName }}
+                                            {{
+                                                getCategoryName(
+                                                    balance.categoryId
+                                                )
+                                            }}
                                         </span>
                                     </div>
                                 </td>
@@ -248,11 +252,10 @@
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { Chart } from 'chart.js/auto';
 import type { ChartConfiguration } from 'chart.js';
-import type { Category } from '../types/Category';
-import type { Transaction } from '../types/Transaction';
-import { categoryStore } from '../stores/categoryStore';
-import { transactionStore } from '../stores/transactionStore';
+import { useCategoryStore } from '../stores/categoryStore';
+import { useTransactionStore } from '../stores/transactionStore';
 import TransactionsModal from '../components/TransactionsModal.vue';
+import type { Transaction } from '../types/Transaction';
 
 interface Filters {
     startDate: string;
@@ -269,7 +272,16 @@ const filters = ref<Filters>({
     timePeriod: '',
 });
 
-const categories = ref<Category[]>(categoryStore.mockDataCategory);
+const categoryStore = useCategoryStore();
+const transactionStore = useTransactionStore();
+
+onMounted(async () => {
+    await Promise.all([
+        categoryStore.fetchCategories(),
+        transactionStore.fetchCategoryBalances(),
+    ]);
+});
+
 const chartCanvas = ref<HTMLCanvasElement>();
 let chart: Chart | null = null;
 
@@ -279,19 +291,14 @@ const selectedCategoryName = ref('');
 const categoryTransactions = ref<Transaction[]>([]);
 
 const filteredBalances = computed(() => {
-    let filtered = [...transactionStore.mockDataCategoryBalance];
+    let filtered = [...transactionStore.categoryBalances];
 
     // Filter by category
     if (filters.value.selectedCategory) {
         const categoryId = parseInt(filters.value.selectedCategory);
-        const category = categoryStore.mockDataCategory.find(
-            (cat) => cat.id === categoryId
+        filtered = filtered.filter(
+            (balance) => balance.categoryId === categoryId
         );
-        if (category) {
-            filtered = filtered.filter(
-                (balance) => balance.categoryName === category.name
-            );
-        }
     }
 
     // Filter by date range
@@ -325,9 +332,9 @@ const createChart = () => {
     if (!ctx) return;
 
     const chartData = filteredBalances.value.map((balance) => ({
-        label: balance.categoryName,
+        label: getCategoryName(balance.categoryId),
         value: Math.abs(balance.total),
-        color: getChartColor(balance.categoryName),
+        color: getChartColor(getCategoryName(balance.categoryId)),
     }));
 
     const config: ChartConfiguration = {
@@ -380,8 +387,8 @@ const createChart = () => {
             onClick: (_event, elements) => {
                 if (elements.length > 0) {
                     const index = elements[0].index;
-                    const categoryName = chartData[index].label;
-                    showCategoryTransactions(categoryName);
+                    const categoryId = filteredBalances.value[index].categoryId;
+                    showCategoryTransactions(categoryId);
                 }
             },
         },
@@ -437,11 +444,20 @@ const getCategoryColor = (category: string): string => {
     return classes[category as keyof typeof classes] || 'bg-gray-500';
 };
 
-const showCategoryTransactions = (categoryName: string) => {
-    selectedCategoryName.value = categoryName;
-    categoryTransactions.value = transactionStore.mockDataTransaction.filter(
-        (transaction) => transaction.categoryName === categoryName
+const getCategoryName = (categoryId: number): string => {
+    const category = categoryStore.categories.find(
+        (cat) => cat.id === categoryId
     );
+    return category ? category.name : 'Unknown Category';
+};
+
+const showCategoryTransactions = (categoryId: number) => {
+    const categoryName = getCategoryName(categoryId);
+    selectedCategoryName.value = categoryName;
+    const balance = transactionStore.categoryBalances.find(
+        (balance) => balance.categoryId === categoryId
+    );
+    categoryTransactions.value = balance ? balance.transactions : [];
     showTransactionsModal.value = true;
 };
 

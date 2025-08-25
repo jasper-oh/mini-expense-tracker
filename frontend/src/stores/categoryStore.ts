@@ -2,16 +2,6 @@ import { defineStore } from 'pinia';
 import type { Category } from '../types/Category';
 import axios from 'axios';
 
-// const mockDataCategory = [
-//     { id: 1, name: 'Housing' },
-//     { id: 2, name: 'Transportation' },
-//     { id: 3, name: 'Food & Dining' },
-// ];
-
-// export const categoryStore = {
-//     mockDataCategory: mockDataCategory,
-// };
-
 const API_BASE_URL = 'http://localhost:3333';
 
 export const useCategoryStore = defineStore('category', {

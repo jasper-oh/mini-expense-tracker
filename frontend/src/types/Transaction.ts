@@ -18,4 +18,8 @@ export interface CreateTransactionData {
     category_id: number;
 }
 
-export interface CategoryBalance {}
+export interface CategoryBalance {
+    categoryId: number;
+    transactions: Transaction[];
+    total: number;
+}
