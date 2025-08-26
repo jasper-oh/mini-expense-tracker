@@ -1,6 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
 import CategoryService from '#services/category_service'
+import type { ApiResponse, ErrorResponse } from '../types/index.js'
 
 @inject()
 export default class CategoriesController {
@@ -16,13 +17,13 @@ export default class CategoriesController {
       return response.json({
         success: true,
         data: categories,
-      })
+      } as ApiResponse)
     } catch (error) {
       return response.status(500).json({
         success: false,
         message: 'Failed to fetch categories',
         error: error instanceof Error ? error.message : 'Unknown error',
-      })
+      } as ErrorResponse)
     }
   }
 }
