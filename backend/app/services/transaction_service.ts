@@ -40,6 +40,16 @@ export default class TransactionService {
     description: string
     categoryId: number
   }) {
+    // Check if category already has a transaction (one-to-one relationship)
+    const existingTransaction = await db
+      .from('transactions')
+      .where('category_id', transactionData.categoryId)
+      .first()
+
+    if (existingTransaction) {
+      throw new Error('Category already has a transaction. One-to-one relationship enforced.')
+    }
+
     const [transaction] = await db
       .table('transactions')
       .insert({
@@ -58,44 +68,58 @@ export default class TransactionService {
    * Get category balances
    */
   async getCategoryBalances() {
-    // First get all transactions grouped by category
-    const transactions = await db
-      .from('transactions')
-      .join('categories', 'transactions.category_id', 'categories.id')
+    // Get all categories with their transactions (one-to-one relationship)
+    const balances = await db
+      .from('categories')
+      .leftJoin('transactions', 'categories.id', 'transactions.category_id')
       .select(
-        'transactions.id',
+        'categories.id as categoryId',
+        'categories.name as categoryName',
+        'transactions.id as transactionId',
         'transactions.amount',
         'transactions.currency',
         'transactions.date',
         'transactions.description',
-        'transactions.category_id as categoryId',
-        'categories.name as categoryName',
         'transactions.created_at as createdAt',
         'transactions.updated_at as updatedAt'
       )
-      .orderBy('transactions.created_at', 'desc')
+      .orderBy('categories.id')
 
-    // Group transactions by category
-    const groupedByCategory = transactions.reduce(
-      (acc, transaction) => {
-        const categoryId = transaction.categoryId
+    // Group by category and format the response
+    const groupedByCategory = balances.reduce(
+      (acc, row) => {
+        const categoryId = row.categoryId
+
         if (!acc[categoryId]) {
           acc[categoryId] = {
             categoryId,
+            categoryName: row.categoryName,
             transactions: [],
             total: 0,
           }
         }
 
-        acc[categoryId].transactions.push({
-          ...transaction,
-          amount: parseFloat(transaction.amount),
-        })
-        acc[categoryId].total += parseFloat(transaction.amount)
+        if (row.transactionId) {
+          acc[categoryId].transactions.push({
+            id: row.transactionId,
+            amount: parseFloat(row.amount),
+            currency: row.currency,
+            date: row.date,
+            description: row.description,
+            categoryId: row.categoryId,
+            categoryName: row.categoryName,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt,
+          })
+          acc[categoryId].total += parseFloat(row.amount)
+        }
 
         return acc
       },
-      {} as Record<number, { categoryId: number; transactions: any[]; total: number }>
+      {} as Record<
+        number,
+        { categoryId: number; categoryName: string; transactions: any[]; total: number }
+      >
     )
 
     // Convert to array and sort by total descending
