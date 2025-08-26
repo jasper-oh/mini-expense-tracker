@@ -90,25 +90,37 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">
                     Total Balance
                 </h3>
-                <p class="text-3xl font-bold text-green-600">
+                <p
+                    v-if="filteredBalances.length > 0"
+                    class="text-3xl font-bold text-green-600"
+                >
                     {{ formatAmount(totalBalance) }}
                 </p>
+                <p v-else class="text-lg text-gray-400">No data available</p>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">
                     Categories
                 </h3>
-                <p class="text-3xl font-bold text-blue-600">
+                <p
+                    v-if="filteredBalances.length > 0"
+                    class="text-3xl font-bold text-blue-600"
+                >
                     {{ filteredBalances.length }}
                 </p>
+                <p v-else class="text-lg text-gray-400">No data available</p>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">
                     Average per Category
                 </h3>
-                <p class="text-3xl font-bold text-green-600">
+                <p
+                    v-if="filteredBalances.length > 0"
+                    class="text-3xl font-bold text-green-600"
+                >
                     {{ formatAmount(averagePerCategory) }}
                 </p>
+                <p v-else class="text-lg text-gray-400">No data available</p>
             </div>
         </div>
 
@@ -120,13 +132,28 @@
                     Category Distribution
                 </h3>
                 <div class="relative h-80">
+                    <!-- Show chart when data is available -->
                     <canvas
+                        v-if="filteredBalances.length > 0"
                         ref="chartCanvas"
                         @click="handleChartClick"
                     ></canvas>
+
+                    <!-- Show "No data" message when no data is available -->
+                    <NoDataDisplay
+                        v-else
+                        title="No Data Available"
+                        :subtitle="getNoDataMessage()"
+                        icon="chart"
+                    />
                 </div>
                 <div class="mt-4 text-sm text-gray-600 text-center">
-                    Click on a chart segment to view detailed transactions
+                    <span v-if="filteredBalances.length > 0">
+                        Click on a chart segment to view detailed transactions
+                    </span>
+                    <span v-else>
+                        Add some transactions or adjust your filters to see data
+                    </span>
                 </div>
             </div>
 
@@ -169,6 +196,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr
+                                v-if="filteredBalances.length > 0"
                                 v-for="balance in filteredBalances"
                                 :key="balance.categoryId"
                                 @click="
@@ -217,6 +245,17 @@
                                     </span>
                                 </td>
                             </tr>
+
+                            <!-- No data row -->
+                            <tr v-if="filteredBalances.length === 0">
+                                <td colspan="4" class="px-6 py-12 text-center">
+                                    <NoDataCompact
+                                        title="No Data Available"
+                                        :subtitle="getNoDataMessage()"
+                                        icon="chart"
+                                    />
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -240,6 +279,8 @@ import type { ChartConfiguration } from 'chart.js';
 import { useCategoryStore } from '../stores/categoryStore';
 import { useTransactionStore } from '../stores/transactionStore';
 import TransactionsModal from '../components/TransactionsModal.vue';
+import NoDataDisplay from '../components/NoDataDisplay.vue';
+import NoDataCompact from '../components/NoDataCompact.vue';
 import type { Transaction } from '../types/Transaction';
 
 interface Filters {
@@ -310,10 +351,10 @@ const filteredBalances = computed(() => {
                     (transaction) => {
                         const transactionDate = new Date(transaction.date);
                         const startDate = filters.value.startDate
-                            ? new Date(filters.value.startDate)
+                            ? new Date(filters.value.startDate + 'T00:00:00')
                             : null;
                         const endDate = filters.value.endDate
-                            ? new Date(filters.value.endDate)
+                            ? new Date(filters.value.endDate + 'T23:59:59')
                             : null;
 
                         // If start date is set, transaction must be on or after it
@@ -334,7 +375,7 @@ const filteredBalances = computed(() => {
             // Calculate new total based on filtered transactions
             const filteredTotal = categoryTransactions.reduce(
                 (sum, transaction) => {
-                    return sum + transaction.amount;
+                    return sum + transaction.convertedCad;
                 },
                 0
             );
@@ -346,6 +387,9 @@ const filteredBalances = computed(() => {
                 total: filteredTotal,
             };
         });
+
+        // Filter out categories that have zero transactions after date filtering
+        filtered = filtered.filter((balance) => balance.total !== 0);
     }
 
     return filtered;
@@ -361,6 +405,15 @@ const totalBalance = computed(() => {
 const averagePerCategory = computed(() => {
     if (filteredBalances.value.length === 0) return 0;
     return totalBalance.value / filteredBalances.value.length;
+});
+
+// Check if filters are applied but no results
+const hasActiveFilters = computed(() => {
+    return (
+        filters.value.startDate ||
+        filters.value.endDate ||
+        filters.value.selectedCategory
+    );
 });
 
 // Chart configuration
@@ -506,6 +559,25 @@ const getCategoryName = (categoryId: number): string => {
         (cat) => cat.id === categoryId
     );
     return category ? category.name : 'Unknown Category';
+};
+
+const getNoDataMessage = (): string => {
+    // Check if there are any transactions at all
+    if (transactionStore.transactions.length === 0) {
+        return 'No transactions found. Add some transactions to get started.';
+    }
+
+    // Check if filters are applied
+    if (hasActiveFilters.value) {
+        return 'No data matches your current filters. Try adjusting the date range or category selection.';
+    }
+
+    // Check if there are categories
+    if (categoryStore.categories.length === 0) {
+        return 'No categories found. Please create some categories first.';
+    }
+
+    return 'No data available for the selected criteria.';
 };
 
 const showCategoryTransactions = (categoryId: number) => {

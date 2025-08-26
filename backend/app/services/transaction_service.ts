@@ -5,9 +5,11 @@ import type {
   CreateTransactionData,
   CategoryBalanceResponse,
 } from '../types/index.js'
+import CurrencyService from './currency_service.js'
 
 @inject()
 export default class TransactionService {
+  constructor(private currencyService: CurrencyService) {}
   /**
    * Get all transactions with category information
    */
@@ -19,6 +21,7 @@ export default class TransactionService {
         'transactions.id',
         'transactions.amount',
         'transactions.currency',
+        'transactions.converted_cad',
         'transactions.date',
         'transactions.description',
         'transactions.category_id as categoryId',
@@ -32,6 +35,7 @@ export default class TransactionService {
     return transactions.map((transaction) => ({
       ...transaction,
       amount: parseFloat(transaction.amount),
+      convertedCad: parseFloat(transaction.converted_cad),
     }))
   }
 
@@ -39,11 +43,19 @@ export default class TransactionService {
    * Create a new transaction
    */
   async createTransaction(transactionData: CreateTransactionData): Promise<TransactionResponse> {
+    // Convert amount to CAD using historical exchange rate
+    const convertedCad = await this.currencyService.convertToCAD(
+      transactionData.amount,
+      transactionData.currency,
+      transactionData.date
+    )
+
     const [transaction] = await db
       .table('transactions')
       .insert({
         amount: transactionData.amount,
         currency: transactionData.currency,
+        converted_cad: convertedCad,
         date: transactionData.date,
         description: transactionData.description,
         category_id: transactionData.categoryId,
@@ -58,6 +70,7 @@ export default class TransactionService {
       id: transaction.id,
       amount: parseFloat(transaction.amount),
       currency: transaction.currency,
+      convertedCad: parseFloat(transaction.converted_cad),
       date: transaction.date,
       description: transaction.description,
       categoryId: transaction.category_id,
@@ -81,6 +94,7 @@ export default class TransactionService {
         'transactions.id as transactionId',
         'transactions.amount',
         'transactions.currency',
+        'transactions.converted_cad',
         'transactions.date',
         'transactions.description',
         'transactions.created_at as createdAt',
@@ -107,6 +121,7 @@ export default class TransactionService {
             id: row.transactionId,
             amount: parseFloat(row.amount),
             currency: row.currency || '',
+            convertedCad: parseFloat(row.converted_cad || '0'),
             date: row.date || new Date().toISOString(),
             description: row.description || '',
             categoryId: row.categoryId,
@@ -114,7 +129,8 @@ export default class TransactionService {
             createdAt: row.createdAt || new Date().toISOString(),
             updatedAt: row.updatedAt || new Date().toISOString(),
           })
-          acc[categoryId].total += parseFloat(row.amount)
+          // Use converted CAD amount for total calculation
+          acc[categoryId].total += parseFloat(row.converted_cad || '0')
         }
 
         return acc

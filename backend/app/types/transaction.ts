@@ -7,6 +7,7 @@ export interface TransactionAttributes {
   id: number
   amount: number
   currency: string
+  convertedCad: number
   date: DateTime
   description: string
   categoryId: number
@@ -21,6 +22,7 @@ export interface TransactionResponse {
   id: number
   amount: number
   currency: string
+  convertedCad: number
   date: string
   description: string
   categoryId: number
