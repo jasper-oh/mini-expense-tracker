@@ -102,7 +102,7 @@
                             <option value="CAD">CAD - Canadian Dollar</option>
                         </select>
                         <p class="text-xs text-gray-500">
-                            Choose your preferred currency
+                            Choose your expense currency
                         </p>
                     </div>
                 </div>
@@ -313,10 +313,18 @@ const router = useRouter();
 const transactionStore = useTransactionStore();
 const categoryStore = useCategoryStore();
 
+// Function to get current date in Vancouver timezone
+const getCurrentVancouverDate = (): string =>
+    new Date()
+        .toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' })
+        .split('/')
+        .reverse()
+        .join('-');
+
 const form = reactive({
     amount: '',
     currency: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getCurrentVancouverDate(),
     description: '',
     categoryId: '',
 });
@@ -359,7 +367,7 @@ const handleSubmit = async () => {
         // Reset form
         form.amount = '';
         form.currency = '';
-        form.date = new Date().toISOString().split('T')[0];
+        form.date = getCurrentVancouverDate();
         form.description = '';
         form.categoryId = '';
 

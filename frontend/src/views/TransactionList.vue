@@ -167,9 +167,6 @@
                                 <div class="text-sm text-gray-900 font-medium">
                                     {{ formatDate(transaction.date) }}
                                 </div>
-                                <div class="text-xs text-gray-500">
-                                    {{ formatTime(transaction.date) }}
-                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div
@@ -344,13 +341,6 @@ const formatDate = (dateString: string): string => {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
-    });
-};
-
-const formatTime = (dateString: string): string => {
-    return new Date(dateString).toLocaleTimeString('en-CA', {
-        hour: '2-digit',
-        minute: '2-digit',
     });
 };
 
