@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, hasOne } from '@adonisjs/lucid/orm'
-import type { HasOne } from '@adonisjs/lucid/types/relations'
+import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
+import type { HasMany } from '@adonisjs/lucid/types/relations'
 import Transaction from './transaction.js'
 
 export default class Category extends BaseModel {
@@ -16,6 +16,6 @@ export default class Category extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  @hasOne(() => Transaction)
-  declare transaction: HasOne<typeof Transaction>
+  @hasMany(() => Transaction)
+  declare transactions: HasMany<typeof Transaction>
 }
