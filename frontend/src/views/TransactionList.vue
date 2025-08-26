@@ -3,25 +3,61 @@
         <!-- Header -->
         <div class="flex justify-between items-center">
             <h2 class="text-3xl font-bold text-gray-900">Transactions</h2>
-            <router-link
-                to="/add"
-                class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center space-x-2"
-            >
-                <svg
-                    class="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+            <div class="flex items-center space-x-4">
+                <div
+                    v-if="isAuthenticated"
+                    class="flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full"
                 >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    ></path>
-                </svg>
-                <span>Add Transaction</span>
-            </router-link>
+                    <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        ></path>
+                    </svg>
+                    <span>Authenticated</span>
+                </div>
+                <button
+                    @click="handleAddTransactionClick"
+                    :class="[
+                        'px-6 py-3 rounded-lg transition-colors font-medium flex items-center space-x-2',
+                        isAuthenticated
+                            ? 'bg-green-600 text-white hover:bg-green-700'
+                            : 'bg-blue-600 text-white hover:bg-blue-700',
+                    ]"
+                >
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        ></path>
+                    </svg>
+                    <span>{{
+                        isAuthenticated
+                            ? 'Add Transaction'
+                            : 'Add Transaction (Login Required)'
+                    }}</span>
+                </button>
+                <div
+                    v-if="!isAuthenticated"
+                    class="text-xs text-gray-500 mt-1 text-center"
+                >
+                    Click to enter JWT token
+                </div>
+            </div>
         </div>
 
         <!-- Search and Filter Bar -->
@@ -255,29 +291,97 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2zm0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                     ></path>
                 </svg>
                 <span>View Category Balance</span>
             </router-link>
+
+            <button
+                v-if="isAuthenticated"
+                @click="logout"
+                class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center space-x-2"
+            >
+                <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    ></path>
+                </svg>
+                <span>Logout</span>
+            </button>
+        </div>
+
+        <!-- JWT Modal -->
+        <JWTModal
+            :is-visible="showJWTModal"
+            @close="showJWTModal = false"
+            @success="handleJWTSuccess"
+        />
+
+        <!-- Success Message -->
+        <div
+            v-if="showSuccessMessage"
+            class="fixed top-4 right-4 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-lg shadow-lg z-50 flex items-center space-x-2"
+        >
+            <svg
+                class="w-5 h-5 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+            </svg>
+            <span
+                >JWT token validated successfully! You can now add
+                transactions.</span
+            >
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import type { Transaction } from '../types/Transaction';
 import type { Category } from '../types/Category';
 import { useTransactionStore } from '../stores/transactionStore';
 import { useCategoryStore } from '../stores/categoryStore';
+import { useAuthStore } from '../stores/authStore';
+import JWTModal from '../components/JWTModal.vue';
 
+const router = useRouter();
 const transactionStore = useTransactionStore();
 const categoryStore = useCategoryStore();
+const authStore = useAuthStore();
 const transactions = ref<Transaction[]>([]);
 const categories = ref<Category[]>([]);
 const searchQuery = ref('');
 const selectedCategory = ref('');
 const sortBy = ref('date');
+const showJWTModal = ref(false);
+const showSuccessMessage = ref(false);
+
+// Computed property to get authentication status from auth store
+const isAuthenticated = computed(() => authStore.isAuthenticated);
+
+// Event handler functions for cleanup
+const handleStorageChange = () => authStore.checkExistingToken();
+const handleAuthStatusChange = (event: any) => {
+    // This is now handled by the auth store
+};
 
 onMounted(async () => {
     await Promise.all([
@@ -286,6 +390,21 @@ onMounted(async () => {
     ]);
     transactions.value = transactionStore.transactions;
     categories.value = categoryStore.categories;
+
+    // Add storage event listener to detect changes in other tabs/windows
+    window.addEventListener('storage', handleStorageChange);
+
+    // Add custom auth event listener
+    window.addEventListener('auth-status-changed', handleAuthStatusChange);
+
+    // Initial auth check
+    authStore.checkExistingToken();
+});
+
+onUnmounted(() => {
+    // Clean up event listeners
+    window.removeEventListener('storage', handleStorageChange);
+    window.removeEventListener('auth-status-changed', handleAuthStatusChange);
 });
 
 const filteredTransactions = computed(() => {
@@ -375,5 +494,36 @@ const getCategoryBadgeClass = (category: string): string => {
 
 const getCategoryName = (transaction: Transaction): string => {
     return transaction.categoryName || `Category ${transaction.categoryId}`;
+};
+
+const handleJWTSuccess = (token: string) => {
+    // Token is already stored in sessionStorage by the modal
+    // Modal will handle navigation to AddTransaction
+    console.log('JWT token validated and stored successfully');
+
+    // Update authentication status - token is already validated by auth store
+
+    // Show success message briefly
+    showSuccessMessage.value = true;
+    setTimeout(() => {
+        showSuccessMessage.value = false;
+    }, 3000); // Hide after 3 seconds
+
+    // The modal will automatically navigate to AddTransaction
+};
+
+const logout = () => {
+    // Use auth store logout method
+    authStore.logout();
+};
+
+const handleAddTransactionClick = () => {
+    if (isAuthenticated.value) {
+        // User is already authenticated, navigate directly to AddTransaction
+        router.push('/add');
+    } else {
+        // User is not authenticated, show JWT modal
+        showJWTModal.value = true;
+    }
 };
 </script>

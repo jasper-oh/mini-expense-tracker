@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { Category } from '../types/Category';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3333';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const useCategoryStore = defineStore('category', {
     state: () => ({
