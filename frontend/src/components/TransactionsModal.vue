@@ -121,6 +121,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 const totalAmount = computed(() => {
+    if (!props.transactions) return 0;
     return props.transactions.reduce(
         (sum, transaction) => sum + transaction.amount,
         0
