@@ -6,7 +6,7 @@ import type {
 } from '../types/Transaction';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3333';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const useTransactionStore = defineStore('transaction', {
     state: () => ({
@@ -73,9 +73,23 @@ export const useTransactionStore = defineStore('transaction', {
                 this.loading = true;
                 this.error = null;
 
+                // Get JWT token from sessionStorage
+                const jwtToken = sessionStorage.getItem('jwt_token');
+
+                if (!jwtToken) {
+                    throw new Error(
+                        'JWT token not found. Please authenticate first.'
+                    );
+                }
+
                 const response = await axios.post(
                     `${API_BASE_URL}/api/transactions`,
-                    transactionData
+                    transactionData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${jwtToken}`,
+                        },
+                    }
                 );
 
                 if (response.data.success) {

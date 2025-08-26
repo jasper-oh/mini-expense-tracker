@@ -14,6 +14,10 @@ ls -la database/migrations/
 echo "📊 Checking migration status..."
 node ace migration:status
 
+# Build TypeScript
+echo "📦 Building TypeScript..."
+npm run build
+
 # Run migrations with error checking
 echo "🗄️ Running database migrations..."
 if node ace migration:run --force; then

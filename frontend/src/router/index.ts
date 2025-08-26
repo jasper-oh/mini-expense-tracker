@@ -30,4 +30,17 @@ const router = createRouter({
     routes,
 });
 
+// Route guard for AddTransaction page
+router.beforeEach((to, _, next) => {
+    if (to.name === 'AddTransaction') {
+        const jwtToken = sessionStorage.getItem('jwt_token');
+        if (!jwtToken) {
+            // Redirect to transactions page if no JWT token
+            next({ name: 'TransactionList' });
+            return;
+        }
+    }
+    next();
+});
+
 export default router;

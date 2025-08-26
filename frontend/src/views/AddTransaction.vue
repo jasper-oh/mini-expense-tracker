@@ -24,12 +24,51 @@
             <h2 class="text-3xl font-bold text-gray-900">
                 Add New Transaction
             </h2>
+            <div
+                v-if="isAuthenticated"
+                class="ml-auto flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full"
+            >
+                <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 0z"
+                    ></path>
+                </svg>
+                <span>Authenticated</span>
+            </div>
+            <div
+                v-else
+                class="ml-auto flex items-center space-x-2 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-full"
+            >
+                <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
+                </svg>
+                <span>Not Authenticated</span>
+            </div>
         </div>
 
         <!-- Transaction Form -->
         <form
             @submit.prevent="handleSubmit"
             class="bg-white shadow-lg rounded-xl p-8 space-y-8"
+            :class="{ 'opacity-50 pointer-events-none': !isAuthenticated }"
         >
             <!-- Amount and Currency Section -->
             <div class="border-b border-gray-200 pb-6">
@@ -217,7 +256,11 @@
                 </router-link>
                 <button
                     type="submit"
-                    :disabled="isSubmitting || categories.length === 0"
+                    :disabled="
+                        isSubmitting ||
+                        categories.length === 0 ||
+                        !isAuthenticated
+                    "
                     class="w-full sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                     <div class="flex items-center justify-center space-x-2">
@@ -258,6 +301,30 @@
                 </button>
             </div>
         </form>
+
+        <!-- Authentication Warning -->
+        <div
+            v-if="!isAuthenticated"
+            class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-6 py-4 rounded-lg flex items-center space-x-2"
+        >
+            <svg
+                class="w-5 h-5 text-yellow-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                ></path>
+            </svg>
+            <span
+                >Authentication required. Please go back to the Transactions
+                page and enter your JWT token to add transactions.</span
+            >
+        </div>
 
         <!-- Success/Error Messages -->
         <div
@@ -303,15 +370,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTransactionStore } from '../stores/transactionStore';
 import { useCategoryStore } from '../stores/categoryStore';
+import { useAuthStore } from '../stores/authStore';
 import type { Category } from '../types/Category';
 
 const router = useRouter();
 const transactionStore = useTransactionStore();
 const categoryStore = useCategoryStore();
+const authStore = useAuthStore();
 
 // Function to get current date in Vancouver timezone
 const getCurrentVancouverDate = (): string =>
@@ -334,6 +403,9 @@ const isSubmitting = ref(false);
 const error = ref('');
 const success = ref(false);
 
+// Computed property to check if user is authenticated
+const isAuthenticated = computed(() => authStore.isAuthenticated);
+
 // Fetch categories from backend
 const fetchCategories = async () => {
     try {
@@ -345,7 +417,18 @@ const fetchCategories = async () => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
+    // Check if JWT token exists and is valid
+    if (!isAuthenticated.value) {
+        // Try to check existing token from sessionStorage
+        const hasValidToken = await authStore.checkExistingToken();
+        if (!hasValidToken) {
+            error.value =
+                'Authentication required. Please go back and enter your JWT token.';
+            return;
+        }
+    }
+
     fetchCategories();
 });
 
@@ -353,6 +436,13 @@ const handleSubmit = async () => {
     try {
         isSubmitting.value = true;
         error.value = '';
+
+        // Check if JWT token exists and is valid
+        if (!isAuthenticated.value) {
+            error.value =
+                'Authentication required. Please go back and enter your JWT token.';
+            return;
+        }
 
         await transactionStore.addTransaction({
             amount: parseFloat(form.amount),
