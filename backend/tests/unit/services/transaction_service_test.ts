@@ -1,355 +1,294 @@
-// import { test } from '@japa/runner'
-// import { TransactionService } from '#services/transaction_service'
-// import db from '@adonisjs/lucid/services/db'
-// import type { TransactionResponse, CreateTransactionData, CategoryBalanceResponse } from '#types'
+import { test } from '@japa/runner'
+import TransactionService from '#services/transaction_service'
+import db from '@adonisjs/lucid/services/db'
+import type { CreateTransactionData } from '#types/transaction'
 
-// test.group('TransactionService', (group) => {
-//   let transactionService: TransactionService
+test.group('TransactionService', (group) => {
+  let transactionService: TransactionService
+  let mockCurrencyService: any
 
-//   group.each.setup(async () => {
-//     transactionService = new TransactionService()
-//   })
+  group.each.setup(async () => {
+    // Create mock currency service
+    mockCurrencyService = {
+      convertToCAD: async (amount: number, currency: string, date: string) => amount,
+    }
 
-//   group.each.teardown(async () => {
-//     // Clean up any test data
-//     await db.raw('TRUNCATE TABLE transactions CASCADE')
-//     await db.raw('TRUNCATE TABLE categories CASCADE')
-//   })
+    transactionService = new TransactionService(mockCurrencyService)
+  })
 
-//   test.group('getAllTransactions', () => {
-//     test('should return all transactions with category information', async ({ assert }) => {
-//       // Arrange
-//       const testCategories = [
-//         { name: 'Food' },
-//         { name: 'Transport' },
-//       ]
+  group.each.teardown(async () => {
+    // Clean up any test data
+    await db.raw('TRUNCATE TABLE transactions CASCADE')
+    await db.raw('TRUNCATE TABLE categories CASCADE')
+  })
 
-//       // Insert categories
-//       const categoryIds = []
-//       for (const category of testCategories) {
-//         const [result] = await db.table('categories').insert(category).returning('id')
-//         categoryIds.push(result.id)
-//       }
+  test.group('getAllTransactions', () => {
+    test('should return all transactions with category information', async ({ assert }) => {
+      // Arrange
+      const testCategories = [{ name: 'Food' }, { name: 'Transport' }]
 
-//       const testTransactions = [
-//         { amount: 25.50, currency: 'USD', date: '2024-01-01', description: 'Lunch', category_id: categoryIds[0] },
-//         { amount: 30.00, currency: 'USD', date: '2024-01-01', description: 'Uber', category_id: categoryIds[1] },
-//         { amount: 15.00, currency: 'USD', date: '2024-01-02', description: 'Coffee', category_id: categoryIds[0] },
-//       ]
+      // Insert categories
+      const categoryIds = []
+      for (const category of testCategories) {
+        const [result] = await db.table('categories').insert(category).returning('id')
+        categoryIds.push(result.id)
+      }
 
-//       for (const transaction of testTransactions) {
-//         await db.table('transactions').insert(transaction)
-//       }
+      const testTransactions = [
+        {
+          amount: 25.5,
+          currency: 'USD',
+          date: '2024-01-01',
+          description: 'Lunch',
+          category_id: categoryIds[0],
+        },
+        {
+          amount: 30.0,
+          currency: 'USD',
+          date: '2024-01-01',
+          description: 'Uber',
+          category_id: categoryIds[1],
+        },
+        {
+          amount: 15.0,
+          currency: 'USD',
+          date: '2024-01-02',
+          description: 'Coffee',
+          category_id: categoryIds[0],
+        },
+      ]
 
-//       // Act
-//       const result = await transactionService.getAllTransactions()
+      for (const transaction of testTransactions) {
+        await db.table('transactions').insert(transaction)
+      }
 
-//       // Assert
-//       assert.isArray(result)
-//       assert.lengthOf(result, 3)
+      // Act
+      const result = await transactionService.getAllTransactions()
 
-//       // Check structure
-//       result.forEach((transaction) => {
-//         assert.property(transaction, 'id')
-//         assert.property(transaction, 'amount')
-//         assert.property(transaction, 'currency')
-//         assert.property(transaction, 'date')
-//         assert.property(transaction, 'description')
-//         assert.property(transaction, 'categoryId')
-//         assert.property(transaction, 'categoryName')
-//         assert.property(transaction, 'createdAt')
-//         assert.property(transaction, 'updatedAt')
+      // Assert
+      assert.isArray(result)
+      assert.lengthOf(result, 3)
 
-//         assert.isNumber(transaction.id)
-//         assert.isNumber(transaction.amount)
-//         assert.isString(transaction.currency)
-//         assert.isString(transaction.date)
-//         assert.isString(transaction.description)
-//         assert.isNumber(transaction.categoryId)
-//         assert.isString(transaction.categoryName)
-//         assert.instanceOf(transaction.createdAt, Date)
-//         assert.instanceOf(transaction.updatedAt, Date)
-//       })
+      // Check structure
+      result.forEach((transaction) => {
+        assert.property(transaction, 'id')
+        assert.property(transaction, 'amount')
+        assert.property(transaction, 'currency')
+        assert.property(transaction, 'date')
+        assert.property(transaction, 'description')
+        assert.property(transaction, 'categoryId')
+        assert.property(transaction, 'categoryName')
+        assert.property(transaction, 'createdAt')
+        assert.property(transaction, 'updatedAt')
 
-//       // Check amounts are parsed as numbers
-//       result.forEach((transaction) => {
-//         assert.isNumber(transaction.amount)
-//         assert.notStrictEqual(transaction.amount, '25.50') // Should not be string
-//       })
+        assert.isNumber(transaction.id)
+        assert.isNumber(transaction.amount)
+        assert.isString(transaction.currency)
+        assert.isString(transaction.date)
+        assert.isString(transaction.description)
+        assert.isNumber(transaction.categoryId)
+        assert.isString(transaction.categoryName)
+        assert.instanceOf(transaction.createdAt, Date)
+        assert.instanceOf(transaction.updatedAt, Date)
+      })
 
-//       // Check ordering (should be by created_at desc)
-//       const dates = result.map(t => t.createdAt)
-//       assert.isTrue(dates[0] >= dates[1] && dates[1] >= dates[2])
-//     })
+      // Check amounts are parsed as numbers
+      result.forEach((transaction) => {
+        assert.isNumber(transaction.amount)
+        assert.notStrictEqual(transaction.amount, '25.50') // Should not be string
+      })
 
-//     test('should return empty array when no transactions exist', async ({ assert }) => {
-//       // Act
-//       const result = await transactionService.getAllTransactions()
+      // Check ordering (should be by created_at desc)
+      const dates = result.map((t) => t.createdAt)
+      assert.isTrue(dates[0] >= dates[1] && dates[1] >= dates[2])
+    })
 
-//       // Assert
-//       assert.isArray(result)
-//       assert.lengthOf(result, 0)
-//     })
+    test('should return empty array when no transactions exist', async ({ assert }) => {
+      // Act
+      const result = await transactionService.getAllTransactions()
 
-//     test('should handle database errors gracefully', async ({ assert }) => {
-//       // Arrange - Mock the db.from method to throw an error
-//       const originalFrom = db.from
-//       db.from = () => {
-//         throw new Error('Database query failed')
-//       } as any
+      // Assert
+      assert.isArray(result)
+      assert.lengthOf(result, 0)
+    })
 
-//       // Act & Assert
-//       try {
-//         await transactionService.getAllTransactions()
-//         assert.fail('Expected error to be thrown')
-//       } catch (error) {
-//         assert.instanceOf(error, Error)
-//         assert.equal(error.message, 'Database query failed')
-//       } finally {
-//         // Restore original method
-//         db.from = originalFrom
-//       }
-//     })
-//   })
+    test('should handle database errors gracefully', async ({ assert }) => {
+      // Arrange - Mock the db.from method to throw an error
+      const originalFrom = db.from
+      db.from = () => {
+        throw new Error('Database query failed')
+      }
 
-//   test.group('createTransaction', () => {
-//     test('should create transaction successfully', async ({ assert }) => {
-//       // Arrange
-//       const testCategory = { name: 'Food' }
-//       const [categoryResult] = await db.table('categories').insert(testCategory).returning('id')
+      // Act & Assert
+      try {
+        await transactionService.getAllTransactions()
+        assert.fail('Expected error to be thrown')
+      } catch (error) {
+        assert.instanceOf(error, Error)
+        assert.equal(error.message, 'Database query failed')
+      } finally {
+        // Restore original method
+        db.from = originalFrom
+      }
+    })
+  })
 
-//       const transactionData: CreateTransactionData = {
-//         amount: 50.00,
-//         currency: 'USD',
-//         date: '2024-01-01',
-//         description: 'Dinner',
-//         categoryId: categoryResult.id,
-//       }
+  test.group('createTransaction', () => {
+    test('should create transaction successfully', async ({ assert }) => {
+      // Arrange
+      const testCategory = { name: 'Food' }
+      const [categoryResult] = await db.table('categories').insert(testCategory).returning('*')
 
-//       // Act
-//       const result = await transactionService.createTransaction(transactionData)
+      const transactionData: CreateTransactionData = {
+        amount: 25.5,
+        currency: 'USD',
+        date: '2024-01-01',
+        description: 'Lunch',
+        categoryId: categoryResult.id,
+      }
 
-//       // Assert
-//       assert.exists(result)
-//       assert.property(result, 'id')
-//       assert.property(result, 'amount')
-//       assert.property(result, 'currency')
-//       assert.property(result, 'date')
-//       assert.property(result, 'description')
-//       assert.property(result, 'categoryId')
-//       assert.property(result, 'categoryName')
-//       assert.property(result, 'createdAt')
-//       assert.property(result, 'updatedAt')
+      // Act
+      const result = await transactionService.createTransaction(transactionData)
 
-//       assert.isNumber(result.id)
-//       assert.equal(result.amount, 50.00)
-//       assert.equal(result.currency, 'USD')
-//       assert.equal(result.date, '2024-01-01')
-//       assert.equal(result.description, 'Dinner')
-//       assert.equal(result.categoryId, categoryResult.id)
-//       assert.equal(result.categoryName, 'Food')
-//       assert.instanceOf(result.createdAt, Date)
-//       assert.instanceOf(result.updatedAt, Date)
+      // Assert
+      assert.isObject(result)
+      assert.property(result, 'id')
+      assert.property(result, 'amount')
+      assert.property(result, 'currency')
+      assert.property(result, 'date')
+      assert.property(result, 'description')
+      assert.property(result, 'categoryId')
+      assert.property(result, 'categoryName')
+      assert.property(result, 'createdAt')
+      assert.property(result, 'updatedAt')
 
-//       // Verify transaction was actually created in database
-//       const dbTransaction = await db.from('transactions').where('id', result.id).first()
-//       assert.exists(dbTransaction)
-//       assert.equal(dbTransaction.amount, '50.00') // Database stores as string
-//       assert.equal(dbTransaction.currency, 'USD')
-//       assert.equal(dbTransaction.date, '2024-01-01')
-//       assert.equal(dbTransaction.description, 'Dinner')
-//       assert.equal(dbTransaction.category_id, categoryResult.id)
-//     })
+      assert.isNumber(result.id)
+      assert.isNumber(result.amount)
+      assert.equal(result.amount, 25.5)
+      assert.equal(result.currency, 'USD')
+      assert.equal(result.date, '2024-01-01')
+      assert.equal(result.description, 'Lunch')
+      assert.equal(result.categoryId, categoryResult.id)
+      assert.equal(result.categoryName, 'Food')
+    })
 
-//     test('should handle unknown category gracefully', async ({ assert }) => {
-//       // Arrange
-//       const transactionData: CreateTransactionData = {
-//         amount: 50.00,
-//         currency: 'USD',
-//         date: '2024-01-01',
-//         description: 'Dinner',
-//         categoryId: 999, // Non-existent category
-//       }
+    test('should handle service errors gracefully', async ({ assert }) => {
+      // Arrange
+      const transactionData: CreateTransactionData = {
+        amount: 25.5,
+        currency: 'USD',
+        date: '2024-01-01',
+        description: 'Lunch',
+        categoryId: 999, // Non-existent category
+      }
 
-//       // Act
-//       const result = await transactionService.createTransaction(transactionData)
+      // Act & Assert
+      try {
+        await transactionService.createTransaction(transactionData)
+        assert.fail('Expected error to be thrown')
+      } catch (error) {
+        assert.instanceOf(error, Error)
+      }
+    })
+  })
 
-//       // Assert
-//       assert.exists(result)
-//       assert.equal(result.categoryName, 'Unknown Category')
-//     })
+  test.group('getCategoryBalances', () => {
+    test('should return category balances correctly', async ({ assert }) => {
+      // Arrange
+      const testCategories = [{ name: 'Food' }, { name: 'Transport' }]
 
-//     test('should handle database errors gracefully', async ({ assert }) => {
-//       // Arrange
-//       const transactionData: CreateTransactionData = {
-//         amount: 50.00,
-//         currency: 'USD',
-//         date: '2024-01-01',
-//         description: 'Dinner',
-//         categoryId: 1,
-//       }
+      // Insert categories
+      const categoryIds = []
+      for (const category of testCategories) {
+        const [result] = await db.table('categories').insert(category).returning('id')
+        categoryIds.push(result.id)
+      }
 
-//       // Mock the db.table method to throw an error
-//       const originalTable = db.table
-//       db.table = () => {
-//         throw new Error('Database insert failed')
-//       } as any
+      const testTransactions = [
+        {
+          amount: 25.5,
+          currency: 'USD',
+          date: '2024-01-01',
+          description: 'Lunch',
+          category_id: categoryIds[0],
+        },
+        {
+          amount: 30.0,
+          currency: 'USD',
+          date: '2024-01-01',
+          description: 'Dinner',
+          category_id: categoryIds[0],
+        },
+        {
+          amount: 15.0,
+          currency: 'USD',
+          date: '2024-01-02',
+          description: 'Uber',
+          category_id: categoryIds[1],
+        },
+      ]
 
-//       // Act & Assert
-//       try {
-//         await transactionService.createTransaction(transactionData)
-//         assert.fail('Expected error to be thrown')
-//       } catch (error) {
-//         assert.instanceOf(error, Error)
-//         assert.equal(error.message, 'Database insert failed')
-//       } finally {
-//         // Restore original method
-//         db.table = originalTable
-//       }
-//     })
-//   })
+      for (const transaction of testTransactions) {
+        await db.table('transactions').insert(transaction)
+      }
 
-//   test.group('getCategoryBalances', () => {
-//     test('should return category balances with transactions', async ({ assert }) => {
-//       // Arrange
-//       const testCategories = [
-//         { name: 'Food' },
-//         { name: 'Transport' },
-//       ]
+      // Act
+      const result = await transactionService.getCategoryBalances()
 
-//       // Insert categories
-//       const categoryIds = []
-//       for (const category of testCategories) {
-//         const [result] = await db.table('categories').insert(category).returning('id')
-//         categoryIds.push(result.id)
-//       }
+      // Assert
+      assert.isArray(result)
+      assert.lengthOf(result, 2)
 
-//       const testTransactions = [
-//         { amount: 25.50, currency: 'USD', date: '2024-01-01', description: 'Lunch', category_id: categoryIds[0] },
-//         { amount: 15.00, currency: 'USD', date: '2024-01-01', description: 'Coffee', category_id: categoryIds[0] },
-//         { amount: 30.00, currency: 'USD', date: '2024-01-01', description: 'Uber', category_id: categoryIds[1] },
-//       ]
+      // Check structure
+      result.forEach((balance) => {
+        assert.property(balance, 'categoryId')
+        assert.property(balance, 'categoryName')
+        assert.property(balance, 'transactions')
+        assert.property(balance, 'total')
 
-//       for (const transaction of testTransactions) {
-//         await db.table('transactions').insert(transaction)
-//       }
+        assert.isNumber(balance.categoryId)
+        assert.isString(balance.categoryName)
+        assert.isArray(balance.transactions)
+        assert.isNumber(balance.total)
+      })
 
-//       // Act
-//       const result = await transactionService.getCategoryBalances()
+      // Check specific values
+      const foodBalance = result.find((b) => b.categoryName === 'Food')
+      const transportBalance = result.find((b) => b.categoryName === 'Transport')
 
-//       // Assert
-//       assert.isArray(result)
-//       assert.lengthOf(result, 2)
+      assert.isNotNull(foodBalance)
+      assert.isNotNull(transportBalance)
+      assert.lengthOf(foodBalance!.transactions, 2)
+      assert.lengthOf(transportBalance!.transactions, 1)
+    })
 
-//       // Check structure
-//       result.forEach((balance) => {
-//         assert.property(balance, 'categoryId')
-//         assert.property(balance, 'categoryName')
-//         assert.property(balance, 'transactions')
-//         assert.property(balance, 'total')
+    test('should return empty array when no categories exist', async ({ assert }) => {
+      // Act
+      const result = await transactionService.getCategoryBalances()
 
-//         assert.isNumber(balance.categoryId)
-//         assert.isString(balance.categoryName)
-//         assert.isArray(balance.transactions)
-//         assert.isNumber(balance.total)
-//       })
+      // Assert
+      assert.isArray(result)
+      assert.lengthOf(result, 0)
+    })
 
-//       // Check totals
-//       const foodBalance = result.find(b => b.categoryName === 'Food')
-//       const transportBalance = result.find(b => b.categoryName === 'Transport')
+    test('should handle database errors gracefully', async ({ assert }) => {
+      // Arrange - Mock the db.from method to throw an error
+      const originalFrom = db.from
+      db.from = () => {
+        throw new Error('Database query failed')
+      }
 
-//       assert.exists(foodBalance)
-//       assert.exists(transportBalance)
-//       assert.equal(foodBalance!.total, 40.50) // 25.50 + 15.00
-//       assert.equal(transportBalance!.total, 30.00)
-
-//       // Check transaction counts
-//       assert.lengthOf(foodBalance!.transactions, 2)
-//       assert.lengthOf(transportBalance!.transactions, 1)
-
-//       // Check sorting (should be by total descending)
-//       assert.isTrue(result[0].total >= result[1].total)
-//     })
-
-//     test('should return categories with zero balance when no transactions exist', async ({ assert }) => {
-//       // Arrange
-//       const testCategories = [
-//         { name: 'Food' },
-//         { name: 'Transport' },
-//       ]
-
-//       // Insert only categories
-//       for (const category of testCategories) {
-//         await db.table('categories').insert(category)
-//       }
-
-//       // Act
-//       const result = await transactionService.getCategoryBalances()
-
-//       // Assert
-//       assert.isArray(result)
-//       assert.lengthOf(result, 2)
-
-//       result.forEach((balance) => {
-//         assert.equal(balance.total, 0)
-//         assert.lengthOf(balance.transactions, 0)
-//       })
-//     })
-
-//     test('should handle database errors gracefully', async ({ assert }) => {
-//       // Arrange - Mock the db.from method to throw an error
-//       const originalFrom = db.from
-//       db.from = () => {
-//         throw new Error('Database query failed')
-//       } as any
-
-//       // Act & Assert
-//       try {
-//         await transactionService.getCategoryBalances()
-//         assert.fail('Expected error to be thrown')
-//       } catch (error) {
-//         assert.instanceOf(error, Error)
-//         assert.equal(error.message, 'Database query failed')
-//       } finally {
-//         // Restore original method
-//         db.from = originalFrom
-//       }
-//     })
-
-//     test('should handle mixed currency transactions correctly', async ({ assert }) => {
-//       // Arrange
-//       const testCategory = { name: 'Mixed' }
-//       const [categoryResult] = await db.table('categories').insert(testCategory).returning('id')
-
-//       const testTransactions = [
-//         { amount: 25.50, currency: 'USD', date: '2024-01-01', description: 'USD Transaction', category_id: categoryResult.id },
-//         { amount: 30.00, currency: 'EUR', date: '2024-01-01', description: 'EUR Transaction', category_id: categoryResult.id },
-//       ]
-
-//       for (const transaction of testTransactions) {
-//         await db.table('transactions').insert(transaction)
-//       }
-
-//       // Act
-//       const result = await transactionService.getCategoryBalances()
-
-//       // Assert
-//       assert.isArray(result)
-//       assert.lengthOf(result, 1)
-
-//       const mixedBalance = result[0]
-//       assert.equal(mixedBalance.categoryName, 'Mixed')
-//       assert.equal(mixedBalance.total, 55.50) // 25.50 + 30.00
-//       assert.lengthOf(mixedBalance.transactions, 2)
-
-//       // Check that currencies are preserved in individual transactions
-//       const usdTransaction = mixedBalance.transactions.find(t => t.currency === 'USD')
-//       const eurTransaction = mixedBalance.transactions.find(t => t.currency === 'EUR')
-
-//       assert.exists(usdTransaction)
-//       assert.exists(eurTransaction)
-//       assert.equal(usdTransaction!.amount, 25.50)
-//       assert.equal(eurTransaction!.amount, 30.00)
-//     })
-//   })
-// })
+      // Act & Assert
+      try {
+        await transactionService.getCategoryBalances()
+        assert.fail('Expected error to be thrown')
+      } catch (error) {
+        assert.instanceOf(error, Error)
+        assert.equal(error.message, 'Database query failed')
+      } finally {
+        // Restore original method
+        db.from = originalFrom
+      }
+    })
+  })
+})
