@@ -1,6 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
 import TransactionService from '#services/transaction_service'
+import type { ApiResponse, ErrorResponse } from '../types/index.js'
 
 @inject()
 export default class TransactionsController {
@@ -16,13 +17,13 @@ export default class TransactionsController {
       return response.json({
         success: true,
         data: transactions,
-      })
+      } as ApiResponse)
     } catch (error) {
       return response.status(500).json({
         success: false,
         message: 'Failed to fetch transactions',
         error: error instanceof Error ? error.message : 'Unknown error',
-      })
+      } as ErrorResponse)
     }
   }
 
@@ -44,7 +45,7 @@ export default class TransactionsController {
         return response.status(400).json({
           success: false,
           message: 'All fields are required',
-        })
+        } as ErrorResponse)
       }
 
       const transaction = await this.transactionService.createTransaction({
@@ -58,13 +59,13 @@ export default class TransactionsController {
       return response.status(201).json({
         success: true,
         data: transaction,
-      })
+      } as ApiResponse)
     } catch (error) {
       return response.status(500).json({
         success: false,
         message: 'Failed to create transaction',
         error: error instanceof Error ? error.message : 'Unknown error',
-      })
+      } as ErrorResponse)
     }
   }
 
@@ -78,13 +79,13 @@ export default class TransactionsController {
       return response.json({
         success: true,
         data: balances,
-      })
+      } as ApiResponse)
     } catch (error) {
       return response.status(500).json({
         success: false,
         message: 'Failed to fetch balance by category',
         error: error instanceof Error ? error.message : 'Unknown error',
-      })
+      } as ErrorResponse)
     }
   }
 }

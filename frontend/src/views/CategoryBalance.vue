@@ -29,8 +29,8 @@
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
                 Filter Options
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 mb-2"
                         >Date Range</label
                     >
@@ -49,9 +49,9 @@
                         />
                     </div>
                 </div>
-                <div>
+                <div class="flex-1">
                     <label class="block text-sm font-medium text-gray-700 mb-2"
-                        >Category Name</label
+                        >Category</label
                     >
                     <select
                         v-model="filters.selectedCategory"
@@ -59,7 +59,7 @@
                     >
                         <option value="">All Categories</option>
                         <option
-                            v-for="category in categories"
+                            v-for="category in categoryStore.categories"
                             :key="category.id"
                             :value="category.id"
                         >
@@ -67,35 +67,20 @@
                         </option>
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2"
-                        >Time Period</label
+                <div class="flex space-x-3">
+                    <button
+                        @click="clearFilters"
+                        class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
                     >
-                    <select
-                        v-model="filters.timePeriod"
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        Clear
+                    </button>
+                    <button
+                        @click="applyFilters"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        <option value="">All Time</option>
-                        <option value="today">Today</option>
-                        <option value="week">This Week</option>
-                        <option value="month">This Month</option>
-                        <option value="year">This Year</option>
-                    </select>
+                        Apply
+                    </button>
                 </div>
-            </div>
-            <div class="mt-4 flex justify-end space-x-3">
-                <button
-                    @click="clearFilters"
-                    class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                    Clear Filters
-                </button>
-                <button
-                    @click="applyFilters"
-                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    Apply Filters
-                </button>
             </div>
         </div>
 
@@ -185,11 +170,9 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             <tr
                                 v-for="balance in filteredBalances"
-                                :key="balance.categoryName"
+                                :key="balance.categoryId"
                                 @click="
-                                    showCategoryTransactions(
-                                        balance.categoryName
-                                    )
+                                    showCategoryTransactions(balance.categoryId)
                                 "
                                 class="cursor-pointer hover:bg-gray-50 transition-colors"
                             >
@@ -199,14 +182,20 @@
                                             class="w-3 h-3 rounded-full mr-3"
                                             :class="
                                                 getCategoryColor(
-                                                    balance.categoryName
+                                                    getCategoryName(
+                                                        balance.categoryId
+                                                    )
                                                 )
                                             "
                                         ></div>
                                         <span
                                             class="text-sm font-medium text-gray-900"
                                         >
-                                            {{ balance.categoryName }}
+                                            {{
+                                                getCategoryName(
+                                                    balance.categoryId
+                                                )
+                                            }}
                                         </span>
                                     </div>
                                 </td>
@@ -245,20 +234,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { Chart } from 'chart.js/auto';
 import type { ChartConfiguration } from 'chart.js';
-import type { Category } from '../types/Category';
-import type { Transaction } from '../types/Transaction';
-import { categoryStore } from '../stores/categoryStore';
-import { transactionStore } from '../stores/transactionStore';
+import { useCategoryStore } from '../stores/categoryStore';
+import { useTransactionStore } from '../stores/transactionStore';
 import TransactionsModal from '../components/TransactionsModal.vue';
+import type { Transaction } from '../types/Transaction';
 
 interface Filters {
     startDate: string;
     endDate: string;
     selectedCategory: string;
-    timePeriod: string;
 }
 
 // Filter state
@@ -266,12 +253,29 @@ const filters = ref<Filters>({
     startDate: '',
     endDate: '',
     selectedCategory: '',
-    timePeriod: '',
 });
 
-const categories = ref<Category[]>(categoryStore.mockDataCategory);
+const categoryStore = useCategoryStore();
+const transactionStore = useTransactionStore();
+
 const chartCanvas = ref<HTMLCanvasElement>();
 let chart: Chart | null = null;
+
+onMounted(async () => {
+    try {
+        await Promise.all([
+            categoryStore.fetchCategories(),
+            transactionStore.fetchTransactions(),
+            transactionStore.fetchCategoryBalances(),
+        ]);
+
+        // Create chart after data is loaded
+        await nextTick();
+        createChart();
+    } catch (error) {
+        console.error('Error loading data:', error);
+    }
+});
 
 // Modal state
 const showTransactionsModal = ref(false);
@@ -279,27 +283,69 @@ const selectedCategoryName = ref('');
 const categoryTransactions = ref<Transaction[]>([]);
 
 const filteredBalances = computed(() => {
-    let filtered = [...transactionStore.mockDataCategoryBalance];
+    let filtered = [...transactionStore.categoryBalances];
 
     // Filter by category
     if (filters.value.selectedCategory) {
         const categoryId = parseInt(filters.value.selectedCategory);
-        const category = categoryStore.mockDataCategory.find(
-            (cat) => cat.id === categoryId
+        filtered = filtered.filter(
+            (balance) => balance.categoryId === categoryId
         );
-        if (category) {
-            filtered = filtered.filter(
-                (balance) => balance.categoryName === category.name
-            );
-        }
     }
 
     // Filter by date range
     if (filters.value.startDate || filters.value.endDate) {
-    }
+        // Get all transactions from the store
+        const allTransactions = transactionStore.transactions;
 
-    // Filter by time period
-    if (filters.value.timePeriod) {
+        filtered = filtered.map((balance) => {
+            // Filter transactions for this specific category
+            let categoryTransactions = allTransactions.filter(
+                (transaction) => transaction.categoryId === balance.categoryId
+            );
+
+            // Apply date filtering
+            if (filters.value.startDate || filters.value.endDate) {
+                categoryTransactions = categoryTransactions.filter(
+                    (transaction) => {
+                        const transactionDate = new Date(transaction.date);
+                        const startDate = filters.value.startDate
+                            ? new Date(filters.value.startDate)
+                            : null;
+                        const endDate = filters.value.endDate
+                            ? new Date(filters.value.endDate)
+                            : null;
+
+                        // If start date is set, transaction must be on or after it
+                        if (startDate && transactionDate < startDate) {
+                            return false;
+                        }
+
+                        // If end date is set, transaction must be on or before it
+                        if (endDate && transactionDate > endDate) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+                );
+            }
+
+            // Calculate new total based on filtered transactions
+            const filteredTotal = categoryTransactions.reduce(
+                (sum, transaction) => {
+                    return sum + transaction.amount;
+                },
+                0
+            );
+
+            // Return new balance object with filtered transactions and recalculated total
+            return {
+                ...balance,
+                transactions: categoryTransactions,
+                total: filteredTotal,
+            };
+        });
     }
 
     return filtered;
@@ -319,15 +365,33 @@ const averagePerCategory = computed(() => {
 
 // Chart configuration
 const createChart = () => {
-    if (!chartCanvas.value) return;
+    if (!chartCanvas.value) {
+        console.warn('Chart canvas not available');
+        return;
+    }
 
     const ctx = chartCanvas.value.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn('Could not get chart context');
+        return;
+    }
+
+    // Destroy existing chart if it exists
+    if (chart) {
+        chart.destroy();
+        chart = null;
+    }
+
+    // Check if we have data to display
+    if (filteredBalances.value.length === 0) {
+        console.warn('No data available for chart');
+        return;
+    }
 
     const chartData = filteredBalances.value.map((balance) => ({
-        label: balance.categoryName,
+        label: getCategoryName(balance.categoryId),
         value: Math.abs(balance.total),
-        color: getChartColor(balance.categoryName),
+        color: getChartColor(getCategoryName(balance.categoryId)),
     }));
 
     const config: ChartConfiguration = {
@@ -380,8 +444,8 @@ const createChart = () => {
             onClick: (_event, elements) => {
                 if (elements.length > 0) {
                     const index = elements[0].index;
-                    const categoryName = chartData[index].label;
-                    showCategoryTransactions(categoryName);
+                    const categoryId = filteredBalances.value[index].categoryId;
+                    showCategoryTransactions(categoryId);
                 }
             },
         },
@@ -437,11 +501,20 @@ const getCategoryColor = (category: string): string => {
     return classes[category as keyof typeof classes] || 'bg-gray-500';
 };
 
-const showCategoryTransactions = (categoryName: string) => {
-    selectedCategoryName.value = categoryName;
-    categoryTransactions.value = transactionStore.mockDataTransaction.filter(
-        (transaction) => transaction.categoryName === categoryName
+const getCategoryName = (categoryId: number): string => {
+    const category = categoryStore.categories.find(
+        (cat) => cat.id === categoryId
     );
+    return category ? category.name : 'Unknown Category';
+};
+
+const showCategoryTransactions = (categoryId: number) => {
+    const categoryName = getCategoryName(categoryId);
+    selectedCategoryName.value = categoryName;
+    const balance = transactionStore.categoryBalances.find(
+        (balance) => balance.categoryId === categoryId
+    );
+    categoryTransactions.value = balance ? balance.transactions : [];
     showTransactionsModal.value = true;
 };
 
@@ -458,12 +531,7 @@ const handleChartClick = (_event: MouseEvent) => {
 const applyFilters = () => {
     console.log('Filters applied:', filters.value);
     // Recreate chart when filters change
-    if (chart) {
-        chart.destroy();
-    }
-    nextTick(() => {
-        createChart();
-    });
+    recreateChart();
 };
 
 const clearFilters = () => {
@@ -471,21 +539,33 @@ const clearFilters = () => {
         startDate: '',
         endDate: '',
         selectedCategory: '',
-        timePeriod: '',
     };
     // Recreate chart when filters are cleared
-    if (chart) {
-        chart.destroy();
-    }
-    nextTick(() => {
-        createChart();
-    });
+    recreateChart();
 };
 
-// Lifecycle
-onMounted(() => {
-    nextTick(() => {
+// Chart recreation when data changes
+const recreateChart = async () => {
+    try {
+        if (chart) {
+            chart.destroy();
+            chart = null;
+        }
+        await nextTick();
         createChart();
-    });
-});
+    } catch (error) {
+        console.error('Error recreating chart:', error);
+    }
+};
+
+// Watch for changes in category balances and recreate chart
+watch(
+    () => transactionStore.categoryBalances,
+    () => {
+        if (transactionStore.categoryBalances.length > 0) {
+            recreateChart();
+        }
+    },
+    { deep: true }
+);
 </script>

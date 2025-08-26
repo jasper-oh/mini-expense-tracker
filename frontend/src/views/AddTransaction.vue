@@ -102,7 +102,7 @@
                             <option value="CAD">CAD - Canadian Dollar</option>
                         </select>
                         <p class="text-xs text-gray-500">
-                            Choose your expense currency
+                            Choose your preferred currency
                         </p>
                     </div>
                 </div>
@@ -303,9 +303,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useTransactionStore } from '../stores/transactionStore';
+import { useCategoryStore } from '../stores/categoryStore';
 import type { Category } from '../types/Category';
-import { categoryStore } from '../stores/categoryStore';
+
+const router = useRouter();
+const transactionStore = useTransactionStore();
+const categoryStore = useCategoryStore();
 
 const form = reactive({
     amount: '',
@@ -315,10 +321,57 @@ const form = reactive({
     categoryId: '',
 });
 
-const categories = ref<Category[]>(categoryStore.mockDataCategory);
+const categories = ref<Category[]>([]);
 const isSubmitting = ref(false);
 const error = ref('');
 const success = ref(false);
 
-const handleSubmit = async () => {};
+// Fetch categories from backend
+const fetchCategories = async () => {
+    try {
+        await categoryStore.fetchCategories();
+        categories.value = categoryStore.categories;
+    } catch (err) {
+        console.error('Failed to fetch categories:', err);
+        error.value = 'Failed to load categories. Please refresh the page.';
+    }
+};
+
+onMounted(() => {
+    fetchCategories();
+});
+
+const handleSubmit = async () => {
+    try {
+        isSubmitting.value = true;
+        error.value = '';
+
+        await transactionStore.addTransaction({
+            amount: parseFloat(form.amount),
+            currency: form.currency,
+            date: form.date,
+            description: form.description,
+            category_id: parseInt(form.categoryId),
+        });
+
+        success.value = true;
+
+        // Reset form
+        form.amount = '';
+        form.currency = '';
+        form.date = new Date().toISOString().split('T')[0];
+        form.description = '';
+        form.categoryId = '';
+
+        // Redirect after a short delay
+        setTimeout(() => {
+            router.push('/transactions');
+        }, 1500);
+    } catch (err) {
+        error.value =
+            err instanceof Error ? err.message : 'Failed to add transaction';
+    } finally {
+        isSubmitting.value = false;
+    }
+};
 </script>

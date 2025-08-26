@@ -1,12 +1,17 @@
 import { inject } from '@adonisjs/core'
 import db from '@adonisjs/lucid/services/db'
+import type {
+  TransactionResponse,
+  CreateTransactionData,
+  CategoryBalanceResponse,
+} from '../types/index.js'
 
 @inject()
 export default class TransactionService {
   /**
    * Get all transactions with category information
    */
-  async getAllTransactions() {
+  async getAllTransactions(): Promise<TransactionResponse[]> {
     const transactions = await db
       .from('transactions')
       .join('categories', 'transactions.category_id', 'categories.id')
@@ -33,13 +38,7 @@ export default class TransactionService {
   /**
    * Create a new transaction
    */
-  async createTransaction(transactionData: {
-    amount: number
-    currency: string
-    date: string
-    description: string
-    categoryId: number
-  }) {
+  async createTransaction(transactionData: CreateTransactionData): Promise<TransactionResponse> {
     const [transaction] = await db
       .table('transactions')
       .insert({
@@ -51,54 +50,80 @@ export default class TransactionService {
       })
       .returning('*')
 
-    return transaction
+    // Get category name for the response
+    const category = await db.from('categories').where('id', transactionData.categoryId).first()
+
+    // Transform to match TransactionResponse interface
+    return {
+      id: transaction.id,
+      amount: parseFloat(transaction.amount),
+      currency: transaction.currency,
+      date: transaction.date,
+      description: transaction.description,
+      categoryId: transaction.category_id,
+      categoryName: category?.name || 'Unknown Category',
+      createdAt: transaction.created_at,
+      updatedAt: transaction.updated_at,
+    } as TransactionResponse
   }
 
   /**
    * Get category balances
    */
-  async getCategoryBalances() {
-    // First get all transactions grouped by category
-    const transactions = await db
-      .from('transactions')
-      .join('categories', 'transactions.category_id', 'categories.id')
+  async getCategoryBalances(): Promise<CategoryBalanceResponse[]> {
+    // Get all categories with their transactions (one-to-many relationship)
+    const balances = await db
+      .from('categories')
+      .leftJoin('transactions', 'categories.id', 'transactions.category_id')
       .select(
-        'transactions.id',
+        'categories.id as categoryId',
+        'categories.name as categoryName',
+        'transactions.id as transactionId',
         'transactions.amount',
         'transactions.currency',
         'transactions.date',
         'transactions.description',
-        'transactions.category_id as categoryId',
-        'categories.name as categoryName',
         'transactions.created_at as createdAt',
         'transactions.updated_at as updatedAt'
       )
-      .orderBy('transactions.created_at', 'desc')
+      .orderBy('categories.id')
 
-    // Group transactions by category
-    const groupedByCategory = transactions.reduce(
-      (acc, transaction) => {
-        const categoryId = transaction.categoryId
+    // Group by category and format the response
+    const groupedByCategory = balances.reduce(
+      (acc, row) => {
+        const categoryId = row.categoryId
+
         if (!acc[categoryId]) {
           acc[categoryId] = {
             categoryId,
+            categoryName: row.categoryName,
             transactions: [],
             total: 0,
           }
         }
 
-        acc[categoryId].transactions.push({
-          ...transaction,
-          amount: parseFloat(transaction.amount),
-        })
-        acc[categoryId].total += parseFloat(transaction.amount)
+        if (row.transactionId && row.amount) {
+          acc[categoryId].transactions.push({
+            id: row.transactionId,
+            amount: parseFloat(row.amount),
+            currency: row.currency || '',
+            date: row.date || new Date().toISOString(),
+            description: row.description || '',
+            categoryId: row.categoryId,
+            categoryName: row.categoryName,
+            createdAt: row.createdAt || new Date().toISOString(),
+            updatedAt: row.updatedAt || new Date().toISOString(),
+          })
+          acc[categoryId].total += parseFloat(row.amount)
+        }
 
         return acc
       },
-      {} as Record<number, { categoryId: number; transactions: any[]; total: number }>
+      {} as Record<number, CategoryBalanceResponse>
     )
 
     // Convert to array and sort by total descending
-    return Object.values(groupedByCategory).sort((a, b) => (b as any).total - (a as any).total)
+    const result = Object.values(groupedByCategory) as CategoryBalanceResponse[]
+    return result.sort((a, b) => b.total - a.total)
   }
 }

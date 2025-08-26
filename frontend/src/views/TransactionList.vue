@@ -268,17 +268,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import type { Transaction } from '../types/Transaction';
 import type { Category } from '../types/Category';
-import { transactionStore } from '../stores/transactionStore';
-import { categoryStore } from '../stores/categoryStore';
+import { useTransactionStore } from '../stores/transactionStore';
+import { useCategoryStore } from '../stores/categoryStore';
 
-const transactions = ref<Transaction[]>(transactionStore.mockDataTransaction);
-const categories = ref<Category[]>(categoryStore.mockDataCategory);
+const transactionStore = useTransactionStore();
+const categoryStore = useCategoryStore();
+const transactions = ref<Transaction[]>([]);
+const categories = ref<Category[]>([]);
 const searchQuery = ref('');
 const selectedCategory = ref('');
 const sortBy = ref('date');
+
+onMounted(async () => {
+    await Promise.all([
+        transactionStore.fetchTransactions(),
+        categoryStore.fetchCategories(),
+    ]);
+    transactions.value = transactionStore.transactions;
+    categories.value = categoryStore.categories;
+});
 
 const filteredTransactions = computed(() => {
     let filtered = transactions.value;

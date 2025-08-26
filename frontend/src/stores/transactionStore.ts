@@ -1,156 +1,132 @@
-const mockDataTransaction = [
-    {
-        id: 1,
-        amount: 25.5,
-        currency: 'CAD',
-        date: '2025-08-24T14:30:00Z',
-        description: 'Lunch at Cafe',
-        categoryId: 1,
-        categoryName: 'Food & Dining',
-        createdAt: '2025-08-24T14:31:00Z',
-        updatedAt: '2025-08-24T14:31:00Z',
-    },
-    {
-        id: 2,
-        amount: 50,
-        currency: 'CAD',
-        date: '2025-08-23T10:00:00Z',
-        description: 'Monthly Metro Pass',
-        categoryId: 2,
-        categoryName: 'Transportation',
-        createdAt: '2025-08-23T10:01:00Z',
-        updatedAt: '2025-08-23T10:01:00Z',
-    },
-    {
-        id: 3,
-        amount: 2000,
-        currency: 'CAD',
-        date: '2025-08-22T09:00:00Z',
-        description: 'Monthly housing pay',
-        categoryId: 9,
-        categoryName: 'Housing',
-        createdAt: '2025-08-22T09:01:00Z',
-        updatedAt: '2025-08-22T09:01:00Z',
-    },
-    {
-        id: 4,
-        amount: 120,
-        currency: 'CAD',
-        date: '2025-08-21T15:00:00Z',
-        description: 'Grocery shopping',
-        categoryId: 1,
-        categoryName: 'Food & Dining',
-        createdAt: '2025-08-21T15:01:00Z',
-        updatedAt: '2025-08-21T15:01:00Z',
-    },
-    {
-        id: 5,
-        amount: 85,
-        currency: 'CAD',
-        date: '2025-08-20T12:00:00Z',
-        description: 'Electricity bill',
-        categoryId: 5,
-        categoryName: 'Bills & Utilities',
-        createdAt: '2025-08-20T12:01:00Z',
-        updatedAt: '2025-08-20T12:01:00Z',
-    },
-    {
-        id: 6,
-        amount: 200,
-        currency: 'CAD',
-        date: '2025-08-19T18:00:00Z',
-        description: 'Shopping at mall',
-        categoryId: 3,
-        categoryName: 'Shopping',
-        createdAt: '2025-08-19T18:01:00Z',
-        updatedAt: '2025-08-19T18:01:00Z',
-    },
-    {
-        id: 7,
-        amount: 45,
-        currency: 'CAD',
-        date: '2025-08-18T20:00:00Z',
-        description: 'Movie tickets',
-        categoryId: 4,
-        categoryName: 'Entertainment',
-        createdAt: '2025-08-18T20:01:00Z',
-        updatedAt: '2025-08-18T20:01:00Z',
-    },
-    {
-        id: 8,
-        amount: 75,
-        currency: 'CAD',
-        date: '2025-08-17T14:00:00Z',
-        description: 'Doctor appointment',
-        categoryId: 6,
-        categoryName: 'Healthcare',
-        createdAt: '2025-08-17T14:01:00Z',
-        updatedAt: '2025-08-17T14:01:00Z',
-    },
-    {
-        id: 9,
-        amount: 150,
-        currency: 'CAD',
-        date: '2025-08-16T10:00:00Z',
-        description: 'Online course',
-        categoryId: 7,
-        categoryName: 'Education',
-        createdAt: '2025-08-16T10:01:00Z',
-        updatedAt: '2025-08-16T10:01:00Z',
-    },
-    {
-        id: 10,
-        amount: 300,
-        currency: 'CAD',
-        date: '2025-08-15T09:00:00Z',
-        description: 'Weekend trip',
-        categoryId: 8,
-        categoryName: 'Travel',
-        createdAt: '2025-08-15T09:01:00Z',
-        updatedAt: '2025-08-15T09:01:00Z',
-    },
-];
+import { defineStore } from 'pinia';
+import type {
+    CategoryBalance,
+    CreateTransactionData,
+    Transaction,
+} from '../types/Transaction';
+import axios from 'axios';
 
-const mockDataCategoryBalance = [
-    {
-        categoryName: 'Housing',
-        total: 2000,
-    },
-    {
-        categoryName: 'Transportation',
-        total: 50,
-    },
-    {
-        categoryName: 'Food & Dining',
-        total: 145.5,
-    },
-    {
-        categoryName: 'Bills & Utilities',
-        total: 85,
-    },
-    {
-        categoryName: 'Shopping',
-        total: 200,
-    },
-    {
-        categoryName: 'Entertainment',
-        total: 45,
-    },
-    {
-        categoryName: 'Healthcare',
-        total: 75,
-    },
-    {
-        categoryName: 'Education',
-        total: 150,
-    },
-    {
-        categoryName: 'Travel',
-        total: 300,
-    },
-];
+const API_BASE_URL = 'http://localhost:3333';
 
-export const transactionStore = {
-    mockDataTransaction: mockDataTransaction,
-    mockDataCategoryBalance: mockDataCategoryBalance,
-};
+export const useTransactionStore = defineStore('transaction', {
+    state: () => ({
+        transactions: [] as Transaction[],
+        categoryBalances: [] as CategoryBalance[],
+        loading: false,
+        error: null as string | null,
+    }),
+
+    getters: {
+        totalBalance: (state) => {
+            return state.transactions.reduce(
+                (total, transaction) => total + transaction.amount,
+                0
+            );
+        },
+
+        transactionsByCategory: (state) => {
+            const grouped = state.transactions.reduce((acc, transaction) => {
+                const categoryName =
+                    transaction.categoryName ||
+                    `Category ${transaction.categoryId}`;
+                if (!acc[categoryName]) {
+                    acc[categoryName] = [];
+                }
+                acc[categoryName].push(transaction);
+                return acc;
+            }, {} as Record<string, Transaction[]>);
+
+            return grouped;
+        },
+    },
+
+    actions: {
+        async fetchTransactions() {
+            try {
+                this.loading = true;
+                this.error = null;
+
+                const response = await axios.get(
+                    `${API_BASE_URL}/api/transactions`
+                );
+
+                if (response.data.success) {
+                    this.transactions = response.data.data;
+                } else {
+                    throw new Error(
+                        response.data.message || 'Failed to fetch transactions'
+                    );
+                }
+            } catch (error) {
+                this.error =
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to fetch transactions';
+                throw error;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async addTransaction(transactionData: CreateTransactionData) {
+            try {
+                this.loading = true;
+                this.error = null;
+
+                const response = await axios.post(
+                    `${API_BASE_URL}/api/transactions`,
+                    transactionData
+                );
+
+                if (response.data.success) {
+                    this.transactions.push(response.data.data);
+                    return response.data.data;
+                } else {
+                    throw new Error(
+                        response.data.message || 'Failed to add transaction'
+                    );
+                }
+            } catch (error) {
+                this.error =
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to add transaction';
+                throw error;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async fetchCategoryBalances() {
+            try {
+                this.loading = true;
+                this.error = null;
+
+                const response = await axios.get(
+                    `${API_BASE_URL}/api/transactions/balance`
+                );
+
+                if (response.data.success) {
+                    this.categoryBalances = response.data.data;
+                } else {
+                    throw new Error(
+                        response.data.message ||
+                            'Failed to fetch category balances'
+                    );
+                }
+            } catch (error) {
+                this.error =
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to fetch category balances';
+                throw error;
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        clearError() {
+            this.error = null;
+        },
+    },
+});
