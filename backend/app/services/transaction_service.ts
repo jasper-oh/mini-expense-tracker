@@ -1,12 +1,17 @@
 import { inject } from '@adonisjs/core'
 import db from '@adonisjs/lucid/services/db'
+import type {
+  TransactionResponse,
+  CreateTransactionData,
+  CategoryBalanceResponse,
+} from '../types/index.js'
 
 @inject()
 export default class TransactionService {
   /**
    * Get all transactions with category information
    */
-  async getAllTransactions() {
+  async getAllTransactions(): Promise<TransactionResponse[]> {
     const transactions = await db
       .from('transactions')
       .join('categories', 'transactions.category_id', 'categories.id')
@@ -33,23 +38,7 @@ export default class TransactionService {
   /**
    * Create a new transaction
    */
-  async createTransaction(transactionData: {
-    amount: number
-    currency: string
-    date: string
-    description: string
-    categoryId: number
-  }) {
-    // Check if category already has a transaction (one-to-one relationship)
-    const existingTransaction = await db
-      .from('transactions')
-      .where('category_id', transactionData.categoryId)
-      .first()
-
-    if (existingTransaction) {
-      throw new Error('Category already has a transaction. One-to-one relationship enforced.')
-    }
-
+  async createTransaction(transactionData: CreateTransactionData): Promise<TransactionResponse> {
     const [transaction] = await db
       .table('transactions')
       .insert({
@@ -61,14 +50,28 @@ export default class TransactionService {
       })
       .returning('*')
 
-    return transaction
+    // Get category name for the response
+    const category = await db.from('categories').where('id', transactionData.categoryId).first()
+
+    // Transform to match TransactionResponse interface
+    return {
+      id: transaction.id,
+      amount: parseFloat(transaction.amount),
+      currency: transaction.currency,
+      date: transaction.date,
+      description: transaction.description,
+      categoryId: transaction.category_id,
+      categoryName: category?.name || 'Unknown Category',
+      createdAt: transaction.created_at,
+      updatedAt: transaction.updated_at,
+    } as TransactionResponse
   }
 
   /**
    * Get category balances
    */
-  async getCategoryBalances() {
-    // Get all categories with their transactions (one-to-one relationship)
+  async getCategoryBalances(): Promise<CategoryBalanceResponse[]> {
+    // Get all categories with their transactions (one-to-many relationship)
     const balances = await db
       .from('categories')
       .leftJoin('transactions', 'categories.id', 'transactions.category_id')
@@ -99,30 +102,28 @@ export default class TransactionService {
           }
         }
 
-        if (row.transactionId) {
+        if (row.transactionId && row.amount) {
           acc[categoryId].transactions.push({
             id: row.transactionId,
             amount: parseFloat(row.amount),
-            currency: row.currency,
-            date: row.date,
-            description: row.description,
+            currency: row.currency || '',
+            date: row.date || new Date().toISOString(),
+            description: row.description || '',
             categoryId: row.categoryId,
             categoryName: row.categoryName,
-            createdAt: row.createdAt,
-            updatedAt: row.updatedAt,
+            createdAt: row.createdAt || new Date().toISOString(),
+            updatedAt: row.updatedAt || new Date().toISOString(),
           })
           acc[categoryId].total += parseFloat(row.amount)
         }
 
         return acc
       },
-      {} as Record<
-        number,
-        { categoryId: number; categoryName: string; transactions: any[]; total: number }
-      >
+      {} as Record<number, CategoryBalanceResponse>
     )
 
     // Convert to array and sort by total descending
-    return Object.values(groupedByCategory).sort((a, b) => (b as any).total - (a as any).total)
+    const result = Object.values(groupedByCategory) as CategoryBalanceResponse[]
+    return result.sort((a, b) => b.total - a.total)
   }
 }
