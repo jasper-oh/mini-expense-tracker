@@ -2,6 +2,7 @@ export interface Transaction {
     id: number;
     amount: number;
     currency: string;
+    convertedCad: number;
     date: string;
     description: string;
     categoryId: number;

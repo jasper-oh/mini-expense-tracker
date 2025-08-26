@@ -6,7 +6,10 @@
     "scripts": {
         "dev": "vite",
         "build": "vue-tsc -b && vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:coverage": "vitest --coverage"
     },
     "dependencies": {
         "@tailwindcss/cli": "^4.1.12",
@@ -19,13 +22,19 @@
     },
     "devDependencies": {
         "@types/chart.js": "^2.9.41",
+        "@types/node": "^24.3.0",
         "@vitejs/plugin-vue": "^6.0.1",
+        "@vitest/coverage-v8": "^0.34.0",
+        "@vitest/ui": "^0.34.0",
+        "@vue/test-utils": "^2.4.6",
         "@vue/tsconfig": "^0.7.0",
         "autoprefixer": "^10.4.21",
+        "jsdom": "^23.0.0",
         "postcss": "^8.5.6",
         "tailwindcss": "^3.4.17",
         "typescript": "~5.8.3",
         "vite": "^7.1.2",
+        "vitest": "^0.34.0",
         "vue-tsc": "^3.0.5"
     }
 }
