@@ -10,3 +10,4 @@ COPY . .
 
 EXPOSE 3333
 
+CMD ["sh", "./start.sh"]
