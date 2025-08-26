@@ -1,35 +1,31 @@
-// for AdonisJS v6
-import path from 'node:path'
-import url from 'node:url'
-// ---
-
 export default {
-  path: path.dirname(url.fileURLToPath(import.meta.url)) + '/../', // for AdonisJS v6
-  controllersPath: path.join(
-    path.dirname(url.fileURLToPath(import.meta.url)),
-    '../app/controllers'
-  ),
-  title: 'Mini-Expense-Tracker',
-  version: '1.0.0', // use info instead
-  description: 'API docs for mini expense tracker', // use info instead
-  tagIndex: 2,
-  info: {
-    title: 'title',
-    version: '1.0.0',
-    description: '',
-  },
-  snakeCase: true,
+  ui: true,
+  specEnabled: true,
+  specUrl: '/swagger.json',
+  middleware: [],
 
-  debug: false, // set to true, to get some useful debug output
-  ignore: ['/swagger', '/docs'],
-  preferredPutPatch: 'PUT', // if PUT/PATCH are provided for the same route, prefer PUT
-  common: {
-    parameters: {}, // OpenAPI conform parameters that are commonly used
-    headers: {}, // OpenAPI conform headers that are commonly used
+  definitions: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Mini Expense Tracker',
+      version: '1.0.0',
+    },
+    tags: [
+      { name: 'Auth', description: 'Authentication related APIs' },
+      { name: 'Secret', description: 'Protected APIs requiring JWT' },
+      { name: 'Category', description: 'Category management APIs' },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: {},
   },
-  // securitySchemes: {}, // optional
-  // authMiddlewares: ['auth', 'auth:api'], // optional
-  // defaultSecurityScheme: 'BearerAuth', // optional
-  persistAuthorization: true, // persist authorization between reloads on the swagger page
-  showFullPath: false, // the path displayed after endpoint summary
+
+  paths: ['start/routes.ts'],
 }
