@@ -12,7 +12,6 @@ export default class AuthJwt {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    console.log('token', token)
 
     try {
       const payload = jwt.verify(token, JWT_SECRET)

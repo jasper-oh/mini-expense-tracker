@@ -474,7 +474,7 @@ const getCategoryName = (transaction: Transaction): string => {
 const handleJWTSuccess = () => {
     // Token is already stored in sessionStorage by the modal
     // Modal will handle navigation to AddTransaction
-    console.log('JWT token validated and stored successfully');
+    console.debug('JWT token validated and stored successfully');
 
     // Update authentication status - token is already validated by auth store
 

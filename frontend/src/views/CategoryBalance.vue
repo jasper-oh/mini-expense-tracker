@@ -553,7 +553,6 @@ const handleChartClick = (_event: MouseEvent) => {
 };
 
 const applyFilters = () => {
-    console.log('Filters applied:', filters.value);
     // Recreate chart when filters change
     recreateChart();
 };
