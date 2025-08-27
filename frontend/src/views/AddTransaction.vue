@@ -376,19 +376,12 @@ import { useTransactionStore } from '../stores/transactionStore';
 import { useCategoryStore } from '../stores/categoryStore';
 import { useAuthStore } from '../stores/authStore';
 import type { Category } from '../types/Category';
+import { getCurrentVancouverDate } from '../utils';
 
 const router = useRouter();
 const transactionStore = useTransactionStore();
 const categoryStore = useCategoryStore();
 const authStore = useAuthStore();
-
-// Function to get current date in Vancouver timezone
-const getCurrentVancouverDate = (): string =>
-    new Date()
-        .toLocaleDateString('en-CA', { timeZone: 'America/Vancouver' })
-        .split('/')
-        .reverse()
-        .join('-');
 
 const form = reactive({
     amount: '',
