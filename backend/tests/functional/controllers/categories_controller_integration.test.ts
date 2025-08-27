@@ -12,16 +12,12 @@ test.group('CategoriesController Integration', (group) => {
   group.each.setup(async () => {
     categoryService = new CategoryService()
     controller = new CategoriesController(categoryService)
-    console.log('BEFORE TRUNCATE')
     await testUtils.db().truncate()
-    console.log('AFTER TRUNCATE')
   })
 
   group.each.teardown(async () => {
     // Clean up test data
-    console.log('BEFORE TRUNCATE')
     await testUtils.db().truncate()
-    console.log('AFTER TRUNCATE')
   })
 
   test('should fetch categories through real service and database', async ({ assert }) => {
