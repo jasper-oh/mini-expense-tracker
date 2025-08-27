@@ -125,6 +125,7 @@ jobs:
                   DB_USER: postgres
                   DB_PASSWORD: postgres
                   DB_DATABASE: app_test
+                  VITE_API_BASE_URL: http://localhost:3333
               run: |
                   cd backend && node ace test unit --force-exit &
                   cd frontend && npm run test
