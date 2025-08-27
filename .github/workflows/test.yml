@@ -126,6 +126,6 @@ jobs:
                   DB_PASSWORD: postgres
                   DB_DATABASE: app_test
               run: |
-                  cd backend && npm run test:functional &
-                  cd frontend && npm run test:unit
+                  cd backend && node ace test unit --force-exit &
+                  cd frontend && npm run test
                   wait
