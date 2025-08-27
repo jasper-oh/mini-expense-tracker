@@ -9,7 +9,7 @@ const options = {
       securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } },
     },
   },
-  apis: ['start/routes.ts'], // 주석 기반
+  apis: ['start/routes.ts'],
 }
 
 const swaggerSpec = swaggerJsDoc(options)
