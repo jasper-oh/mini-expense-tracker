@@ -60,6 +60,9 @@ jobs:
                   JWT_SECRET: test_jwt_secret_for_ci_cd_only
                   DB_CONNECTION: sqlite
                   DB_DATABASE: tmp/test.sqlite
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
               run: node ace test
 
               continue-on-error: true
