@@ -73,6 +73,7 @@ jobs:
     test-integration:
         runs-on: ubuntu-latest
         needs: [test-frontend, test-backend]
+        if: always() && (needs.test-frontend.result == 'success' && needs.test-backend.result == 'success')
         services:
             postgres:
                 image: postgres:15
@@ -128,4 +129,3 @@ jobs:
                   cd backend && npm run test:functional &
                   cd frontend && npm run test:unit
                   wait
-              continue-on-error: true
