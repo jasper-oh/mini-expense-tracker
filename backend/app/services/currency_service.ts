@@ -6,13 +6,12 @@ export default class CurrencyService {
 
   async convertToCAD(amount: number, fromCurrency: string, date: string): Promise<number> {
     try {
-      if (fromCurrency === 'CAD') {
+      if (fromCurrency === 'CAD' || amount <= 0) {
         return amount
       }
 
       const formattedDate = new Date(date).toISOString().split('T')[0]
       const url = `${this.baseUrl}/${formattedDate}?symbols=${fromCurrency},CAD`
-      console.log('Fetching:', url)
 
       const response = await fetch(url)
       if (!response.ok) {

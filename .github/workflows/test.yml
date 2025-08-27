@@ -1,0 +1,132 @@
+name: Test Suite
+
+on:
+    push:
+        branches: ['**']
+
+jobs:
+    test-frontend:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./frontend
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '23'
+                  cache: 'npm'
+                  cache-dependency-path: './frontend/package-lock.json'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run tests
+              env:
+                  NODE_ENV: test
+                  VITE_API_BASE_URL: http://localhost:3333
+              run: npm run test
+
+    test-backend:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./backend
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '23'
+                  cache: 'npm'
+                  cache-dependency-path: './backend/package-lock.json'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Setup SQLite database
+              run: |
+                  mkdir -p tmp
+                  touch tmp/test.sqlite
+
+            - name: Run tests
+              env:
+                  NODE_ENV: test
+                  APP_KEY: xAEyCgg5kL4M-woteiRzngx7t02vGmzi
+                  HOST: localhost
+                  LOG_LEVEL: info
+                  JWT_SECRET: test_jwt_secret_for_ci_cd_only
+                  DB_CONNECTION: sqlite
+                  DB_DATABASE: tmp/test.sqlite
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: sqlite
+              run: node ace test unit --force-exit
+
+    test-integration:
+        runs-on: ubuntu-latest
+        needs: [test-frontend, test-backend]
+        if: always() && (needs.test-frontend.result == 'success' && needs.test-backend.result == 'success')
+        services:
+            postgres:
+                image: postgres:15
+                env:
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_USER: postgres
+                    POSTGRES_DB: app_test
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+                ports:
+                    - 5432:5432
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '23'
+
+            - name: Install frontend dependencies
+              working-directory: ./frontend
+              run: npm ci
+
+            - name: Install backend dependencies
+              working-directory: ./backend
+              run: npm ci
+
+            - name: Wait for PostgreSQL
+              run: |
+                  until pg_isready -h localhost -p 5432 -U postgres; do
+                    echo "Waiting for PostgreSQL..."
+                    sleep 2
+                  done
+
+            - name: Run integration tests
+              env:
+                  NODE_ENV: test
+                  APP_KEY: xAEyCgg5kL4M-woteiRzngx7t02vGmzi
+                  HOST: localhost
+                  LOG_LEVEL: info
+                  JWT_SECRET: test_jwt_secret_for_ci_cd_only
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: postgres
+                  DB_PASSWORD: postgres
+                  DB_DATABASE: app_test
+                  VITE_API_BASE_URL: http://localhost:3333
+              run: |
+                  cd backend && node ace test unit --force-exit &
+                  cd frontend && npm run test
+                  wait
