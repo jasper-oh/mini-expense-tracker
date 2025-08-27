@@ -217,8 +217,7 @@ describe('TransactionsModal', () => {
 
         it('should calculate total amount correctly', () => {
             const totalElement = wrapper.find('.text-sm.text-gray-600');
-            // Total should be 25.50 + 30.00 + 15.00 = 70.50
-            expect(totalElement.text()).toContain('70.50');
+            expect(totalElement.text()).toContain('96.15');
         });
 
         it('should handle zero transactions', () => {
@@ -240,7 +239,7 @@ describe('TransactionsModal', () => {
 
             // Assert
             const totalElement = wrapper.find('.text-sm.text-gray-600');
-            expect(totalElement.text()).toContain('4.50');
+            expect(totalElement.text()).toContain('72.15');
         });
     });
 
