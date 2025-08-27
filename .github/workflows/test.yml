@@ -68,7 +68,7 @@ jobs:
                   DB_HOST: localhost
                   DB_PORT: 5432
                   DB_USER: sqlite
-              run: npm test
+              run: node ace test unit --force-exit
 
     test-integration:
         runs-on: ubuntu-latest
