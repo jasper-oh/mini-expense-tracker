@@ -267,7 +267,7 @@ import {
     formatNumber,
     formatAmount,
     getCategoryColorClass,
-    getChartColor,    
+    getChartColor,
 } from '../utils';
 
 interface Filters {
@@ -535,7 +535,7 @@ const getNoDataMessage = (): string => {
 const showCategoryTransactions = (categoryId: number) => {
     const categoryName = getCategoryName(categoryId);
     selectedCategoryName.value = categoryName;
-    const balance = transactionStore.categoryBalances.find(
+    const balance = filteredBalances.value.find(
         (balance) => balance.categoryId === categoryId
     );
     categoryTransactions.value = balance ? balance.transactions : [];
