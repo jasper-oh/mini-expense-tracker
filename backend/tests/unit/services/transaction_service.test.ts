@@ -11,7 +11,7 @@ test.group('TransactionService', (group) => {
   group.each.setup(async () => {
     // Create mock currency service
     mockCurrencyService = {
-      convertToCAD: async (amount: number, currency: string, date: string) => amount,
+      convertToCAD: async (amount: number) => amount,
     }
 
     transactionService = new TransactionService(mockCurrencyService)

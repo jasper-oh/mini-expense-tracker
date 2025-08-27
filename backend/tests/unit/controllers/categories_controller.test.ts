@@ -4,7 +4,7 @@ import { DateTime } from 'luxon'
 import CategoriesController from '#controllers/categories_controller'
 import CategoryService from '#services/category_service'
 import { CategoryResponse } from '#types/category'
-import db from '@adonisjs/lucid/services/db'
+import testUtils from '@adonisjs/core/services/test_utils'
 
 test.group('CategoriesController', (group) => {
   let controller: CategoriesController
@@ -17,6 +17,7 @@ test.group('CategoriesController', (group) => {
     } as any
 
     controller = new CategoriesController(mockCategoryService)
+    await testUtils.db().truncate()
   })
 
   test('should return categories successfully', async ({ assert }) => {
@@ -40,7 +41,7 @@ test.group('CategoriesController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext
@@ -64,7 +65,7 @@ test.group('CategoriesController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext
@@ -88,7 +89,7 @@ test.group('CategoriesController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext

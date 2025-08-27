@@ -24,14 +24,22 @@ export default class CurrencyService {
         rates: Record<string, number>
       }
 
-      if (!data.rates[fromCurrency] || !data.rates.CAD) {
-        throw new Error(`Rates not found for ${fromCurrency} or CAD`)
+      let converted: number
+
+      if (fromCurrency === 'EUR') {
+        if (!data.rates.CAD) {
+          throw new Error(`Rates not found for CAD`)
+        }
+        converted = amount * data.rates.CAD
+      } else {
+        if (!data.rates[fromCurrency] || !data.rates.CAD) {
+          throw new Error(`Rates not found for ${fromCurrency} or CAD`)
+        }
+
+        const rate = data.rates.CAD / data.rates[fromCurrency]
+        converted = amount * rate
       }
 
-      const rate = data.rates.CAD / data.rates[fromCurrency]
-      const converted = amount * rate
-
-      // 소수점 2자리로 반올림
       return this.roundTo(converted, 2)
     } catch (error) {
       console.error('Currency conversion error:', error)

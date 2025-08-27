@@ -39,7 +39,7 @@ test.group('CategoriesController Integration', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext
@@ -65,7 +65,7 @@ test.group('CategoriesController Integration', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext
@@ -92,7 +92,7 @@ test.group('CategoriesController Integration', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext
