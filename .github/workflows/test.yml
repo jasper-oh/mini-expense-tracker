@@ -67,8 +67,9 @@ jobs:
                   DB_DATABASE: tmp/test.sqlite
                   DB_HOST: localhost
                   DB_PORT: 5432
-                  DB_USER: postgres
-              run: node ace test
+                  DB_USER: sqlite
+              run: timeout 300 node ace test --verbose
+              timeout-minutes: 5
 
     test-integration:
         runs-on: ubuntu-latest
