@@ -26,7 +26,7 @@ services:
         environment:
             NODE_ENV: development
             PORT: 3333
-            APP_KEY: 'your-app-key-here'
+            APP_KEY: 'xAEyCgg5kL4M-woteiRzngx7t02vGmzi'
             HOST: '0.0.0.0'
             LOG_LEVEL: 'info'
             DB_HOST: postgres
@@ -34,6 +34,7 @@ services:
             DB_USER: postgres
             DB_PASSWORD: postgres
             DB_DATABASE: expense_tracker
+            JWT_SECRET: 'alskjdclkwjebflakjsdclakwjenfglaksjdcnlakwejfbalksjdfblaaclwkjebflaksdjfblwkejcb'
         depends_on:
             postgres:
                 condition: service_healthy
