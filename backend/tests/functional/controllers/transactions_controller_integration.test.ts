@@ -14,23 +14,19 @@ test.group('TransactionsController Integration', (group) => {
     transactionService = new TransactionService(new CurrencyService())
     controller = new TransactionsController(transactionService)
     // Clean up any existing data before each test
-    console.log('BEFORE TRUNCATE')
     await testUtils.db().truncate()
-    console.log('AFTER TRUNCATE')
   })
 
   group.each.teardown(async () => {
     // Clean up test data after each test
-    console.log('BEFORE TRUNCATE')
     await testUtils.db().truncate()
-    console.log('AFTER TRUNCATE')
   })
 
   test('should fetch transactions through real service and database', async ({ assert }) => {
     // Arrange
 
     const testCategory = { id: 12, name: 'Food & Drinks' }
-    const [categoryResult] = await db.table('categories').insert(testCategory).returning('id')
+    await db.table('categories').insert(testCategory).returning('id')
 
     const testTransactions = [
       {
@@ -140,7 +136,7 @@ test.group('TransactionsController Integration', (group) => {
     const errorController = new TransactionsController(mockService)
 
     const mockRequest = {
-      only: (fields: string[]) => ({
+      only: () => ({
         amount: '50.00',
         currency: 'USD',
         date: '2024-01-01',
@@ -151,7 +147,7 @@ test.group('TransactionsController Integration', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { request: mockRequest, response: mockResponse } as HttpContext
@@ -187,7 +183,7 @@ test.group('TransactionsController Integration', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext

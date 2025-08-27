@@ -93,7 +93,8 @@
             <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
                 <div class="flex justify-between items-center">
                     <span class="text-sm text-gray-600">
-                        Total: {{ formatNumber(formatAmount(totalAmount)) }}
+                        Total (CAD):
+                        {{ formatNumber(formatAmount(totalAmount)) }}
                     </span>
                     <button
                         @click="closeModal"
@@ -128,7 +129,7 @@ const emit = defineEmits<Emits>();
 const totalAmount = computed(() => {
     if (!props.transactions) return 0;
     return props.transactions.reduce(
-        (sum, transaction) => sum + transaction.amount,
+        (sum, transaction) => sum + transaction.convertedCad,
         0
     );
 });

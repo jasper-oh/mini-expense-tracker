@@ -4,7 +4,7 @@ import { DateTime } from 'luxon'
 import TransactionsController from '#controllers/transactions_controller'
 import TransactionService from '#services/transaction_service'
 import type { TransactionResponse, CategoryBalanceResponse } from '#types/transaction'
-import db from '@adonisjs/lucid/services/db'
+import testUtils from '@adonisjs/core/services/test_utils'
 
 test.group('TransactionsController', (group) => {
   let controller: TransactionsController
@@ -20,8 +20,7 @@ test.group('TransactionsController', (group) => {
 
     controller = new TransactionsController(mockTransactionService)
 
-    db.raw('DELETE FROM transactions')
-    db.raw('DELETE FROM categories')
+    await testUtils.db().truncate()
   })
 
   test('should return transactions successfully', async ({ assert }) => {
@@ -45,7 +44,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext
@@ -68,7 +67,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext
@@ -102,7 +101,7 @@ test.group('TransactionsController', (group) => {
     mockTransactionService.createTransaction = async () => mockTransaction
 
     const mockRequest = {
-      only: (fields: string[]) => ({
+      only: () => ({
         amount: '50.00',
         currency: 'USD',
         date: '2024-01-01',
@@ -113,7 +112,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { request: mockRequest, response: mockResponse } as HttpContext
@@ -131,7 +130,7 @@ test.group('TransactionsController', (group) => {
   test('should return 400 when amount is missing', async ({ assert }) => {
     // Arrange
     const mockRequest = {
-      only: (fields: string[]) => ({
+      only: () => ({
         amount: '',
         currency: 'USD',
         date: '2024-01-01',
@@ -142,7 +141,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { request: mockRequest, response: mockResponse } as HttpContext
@@ -160,7 +159,7 @@ test.group('TransactionsController', (group) => {
   test('should return 400 when currency is missing', async ({ assert }) => {
     // Arrange
     const mockRequest = {
-      only: (fields: string[]) => ({
+      only: () => ({
         amount: '50.00',
         currency: '',
         date: '2024-01-01',
@@ -171,7 +170,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { request: mockRequest, response: mockResponse } as HttpContext
@@ -189,7 +188,7 @@ test.group('TransactionsController', (group) => {
   test('should return 400 when date is missing', async ({ assert }) => {
     // Arrange
     const mockRequest = {
-      only: (fields: string[]) => ({
+      only: () => ({
         amount: '50.00',
         currency: 'USD',
         date: '',
@@ -200,7 +199,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { request: mockRequest, response: mockResponse } as HttpContext
@@ -218,7 +217,7 @@ test.group('TransactionsController', (group) => {
   test('should return 400 when description is missing', async ({ assert }) => {
     // Arrange
     const mockRequest = {
-      only: (fields: string[]) => ({
+      only: () => ({
         amount: '50.00',
         currency: 'USD',
         date: '2024-01-01',
@@ -229,7 +228,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { request: mockRequest, response: mockResponse } as HttpContext
@@ -247,7 +246,7 @@ test.group('TransactionsController', (group) => {
   test('should return 400 when category_id is missing', async ({ assert }) => {
     // Arrange
     const mockRequest = {
-      only: (fields: string[]) => ({
+      only: () => ({
         amount: '50.00',
         currency: 'USD',
         date: '2024-01-01',
@@ -258,7 +257,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { request: mockRequest, response: mockResponse } as HttpContext
@@ -291,7 +290,7 @@ test.group('TransactionsController', (group) => {
     mockTransactionService.createTransaction = async () => mockTransaction
 
     const mockRequest = {
-      only: (fields: string[]) => ({
+      only: () => ({
         amount: '50.00',
         currency: 'USD',
         date: '2024-01-01',
@@ -325,7 +324,7 @@ test.group('TransactionsController', (group) => {
     }
 
     const mockRequest = {
-      only: (fields: string[]) => ({
+      only: () => ({
         amount: '50.00',
         currency: 'USD',
         date: '2024-01-01',
@@ -336,7 +335,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { request: mockRequest, response: mockResponse } as HttpContext
@@ -380,7 +379,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext
@@ -403,7 +402,7 @@ test.group('TransactionsController', (group) => {
 
     const mockResponse = {
       json: (data: any) => data,
-      status: (code: number) => ({ json: (data: any) => data }),
+      status: () => ({ json: (data: any) => data }),
     } as any
 
     const mockContext = { response: mockResponse } as HttpContext
