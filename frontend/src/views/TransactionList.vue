@@ -154,7 +154,10 @@
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                             ></path>
                         </svg>
-                        <span>Total: {{ formatTotalAmount() }}</span>
+                        <span
+                            >Total:
+                            {{ formatNumber(formatTotalAmount()) }} CAD</span
+                        >
                     </div>
                 </div>
             </div>
@@ -206,7 +209,7 @@
                         >
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900 font-medium">
-                                    {{ formatDate(transaction.date) }}
+                                    {{ formatDateDetailed(transaction.date) }}
                                 </div>
                             </td>
                             <td class="px-6 py-4">
@@ -244,7 +247,7 @@
                             <td
                                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium"
                             >
-                                {{ transaction.convertedCad }} CAD
+                                {{ formatNumber(transaction.convertedCad) }} CAD
                             </td>
                         </tr>
                     </tbody>
@@ -345,7 +348,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, onUnmounted } from 'vue';
+import { computed, onMounted, ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Transaction } from '../types/Transaction';
 import type { Category } from '../types/Category';
@@ -354,6 +357,12 @@ import { useCategoryStore } from '../stores/categoryStore';
 import { useAuthStore } from '../stores/authStore';
 import JWTModal from '../components/JWTModal.vue';
 import NoDataDisplay from '../components/NoDataDisplay.vue';
+import {
+    formatNumber,
+    formatAmount,
+    formatDateDetailed,
+    getCategoryBadgeClass,
+} from '../utils';
 
 const router = useRouter();
 const transactionStore = useTransactionStore();
@@ -374,6 +383,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated);
 const handleStorageChange = () => authStore.checkExistingToken();
 const handleAuthStatusChange = (event: any) => {
     // This is now handled by the auth store
+    console.debug('auth-status-changed', event);
 };
 
 onMounted(async () => {
@@ -448,18 +458,6 @@ const filteredTransactions = computed(() => {
     return filtered;
 });
 
-const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-CA', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-};
-
-const formatAmount = (amount: number): string => {
-    return Math.abs(amount).toFixed(2);
-};
-
 const formatTotalAmount = (): string => {
     const total = filteredTransactions.value.reduce(
         (sum, transaction) =>
@@ -469,28 +467,11 @@ const formatTotalAmount = (): string => {
     return `${total.toFixed(2)}`;
 };
 
-const getCategoryBadgeClass = (category: string): string => {
-    const classes = {
-        'Food & Dining': 'bg-red-100 text-red-800',
-        Transportation: 'bg-blue-100 text-blue-800',
-        Shopping: 'bg-purple-100 text-purple-800',
-        Entertainment: 'bg-green-100 text-green-800',
-        'Bills & Utilities': 'bg-yellow-100 text-yellow-800',
-        Healthcare: 'bg-pink-100 text-pink-800',
-        Education: 'bg-indigo-100 text-indigo-800',
-        Travel: 'bg-orange-100 text-orange-800',
-        Other: 'bg-gray-100 text-gray-800',
-    };
-    return (
-        classes[category as keyof typeof classes] || 'bg-gray-100 text-gray-800'
-    );
-};
-
 const getCategoryName = (transaction: Transaction): string => {
     return transaction.categoryName || `Category ${transaction.categoryId}`;
 };
 
-const handleJWTSuccess = (token: string) => {
+const handleJWTSuccess = () => {
     // Token is already stored in sessionStorage by the modal
     // Modal will handle navigation to AddTransaction
     console.log('JWT token validated and stored successfully');

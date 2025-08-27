@@ -85,16 +85,16 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                    Total Balance
+                    Total Balance (CAD)
                 </h3>
                 <p
                     v-if="filteredBalances.length > 0"
                     class="text-3xl font-bold text-green-600"
                 >
-                    {{ formatAmount(totalBalance) }}
+                    {{ formatNumber(formatAmount(totalBalance)) }}
                 </p>
                 <p v-else class="text-lg text-gray-400">No data available</p>
             </div>
@@ -107,18 +107,6 @@
                     class="text-3xl font-bold text-blue-600"
                 >
                     {{ filteredBalances.length }}
-                </p>
-                <p v-else class="text-lg text-gray-400">No data available</p>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                    Average per Category
-                </h3>
-                <p
-                    v-if="filteredBalances.length > 0"
-                    class="text-3xl font-bold text-green-600"
-                >
-                    {{ formatAmount(averagePerCategory) }}
                 </p>
                 <p v-else class="text-lg text-gray-400">No data available</p>
             </div>
@@ -178,19 +166,13 @@
                                     scope="col"
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
-                                    Total Amount
-                                </th>
-                                <th
-                                    scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                >
                                     Percentage
                                 </th>
                                 <th
                                     scope="col"
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                 >
-                                    Balance
+                                    Balance (CAD)
                                 </th>
                             </tr>
                         </thead>
@@ -209,7 +191,7 @@
                                         <div
                                             class="w-3 h-3 rounded-full mr-3"
                                             :class="
-                                                getCategoryColor(
+                                                getCategoryColorClass(
                                                     getCategoryName(
                                                         balance.categoryId
                                                     )
@@ -230,18 +212,17 @@
                                 <td
                                     class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                                 >
-                                    {{ formatAmount(balance.total) }}
-                                </td>
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                                >
                                     {{ calculatePercentage(balance.total) }}%
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span
                                         class="text-sm font-semibold text-green-600"
                                     >
-                                        {{ formatAmount(balance.total) }}
+                                        {{
+                                            formatNumber(
+                                                formatAmount(balance.total)
+                                            )
+                                        }}
                                     </span>
                                 </td>
                             </tr>
@@ -282,6 +263,12 @@ import TransactionsModal from '../components/TransactionsModal.vue';
 import NoDataDisplay from '../components/NoDataDisplay.vue';
 import NoDataCompact from '../components/NoDataCompact.vue';
 import type { Transaction } from '../types/Transaction';
+import {
+    formatNumber,
+    formatAmount,
+    getCategoryColorClass,
+    getChartColor,    
+} from '../utils';
 
 interface Filters {
     startDate: string;
@@ -507,26 +494,7 @@ const createChart = () => {
     chart = new Chart(ctx, config);
 };
 
-const getChartColor = (categoryName: string): string => {
-    const colors = {
-        'Food & Dining': '#ef4444',
-        Transportation: '#3b82f6',
-        Shopping: '#8b5cf6',
-        Entertainment: '#10b981',
-        'Bills & Utilities': '#eab308',
-        Healthcare: '#ec4899',
-        Education: '#6366f1',
-        Travel: '#f97316',
-        Housing: '#06b6d4',
-        Other: '#6b7280',
-    };
-    return colors[categoryName as keyof typeof colors] || '#6b7280';
-};
-
 // Methods
-const formatAmount = (amount: number): string => {
-    return Math.abs(amount).toFixed(2);
-};
 
 const calculatePercentage = (amount: number): string => {
     const total = filteredBalances.value.reduce(
@@ -534,24 +502,8 @@ const calculatePercentage = (amount: number): string => {
         0
     );
 
-    if (total === 0) return '0.00';
+    if (total === 0) return '0.0';
     return ((Math.abs(amount) / total) * 100).toFixed(1);
-};
-
-const getCategoryColor = (category: string): string => {
-    const classes = {
-        'Food & Dining': 'bg-red-500',
-        Transportation: 'bg-blue-500',
-        Shopping: 'bg-purple-500',
-        Entertainment: 'bg-green-500',
-        'Bills & Utilities': 'bg-yellow-500',
-        Healthcare: 'bg-pink-500',
-        Education: 'bg-indigo-500',
-        Travel: 'bg-orange-500',
-        Housing: 'bg-cyan-500',
-        Other: 'bg-gray-500',
-    };
-    return classes[category as keyof typeof classes] || 'bg-gray-500';
 };
 
 const getCategoryName = (categoryId: number): string => {

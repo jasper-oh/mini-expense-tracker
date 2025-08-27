@@ -75,7 +75,11 @@
                             <td
                                 class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600"
                             >
-                                {{ formatAmount(transaction.amount) }}
+                                {{
+                                    formatNumber(
+                                        formatAmount(transaction.amount)
+                                    )
+                                }}
                             </td>
                             <td
                                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
@@ -89,7 +93,7 @@
             <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
                 <div class="flex justify-between items-center">
                     <span class="text-sm text-gray-600">
-                        Total: {{ formatAmount(totalAmount) }}
+                        Total: {{ formatNumber(formatAmount(totalAmount)) }}
                     </span>
                     <button
                         @click="closeModal"
@@ -106,6 +110,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Transaction } from '../types/Transaction';
+import { formatNumber, formatAmount, formatDate } from '../utils';
 
 interface Props {
     isVisible: boolean;
@@ -127,14 +132,6 @@ const totalAmount = computed(() => {
         0
     );
 });
-
-const formatAmount = (amount: number): string => {
-    return Math.abs(amount).toFixed(2);
-};
-
-const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString();
-};
 
 const closeModal = () => {
     emit('close');
