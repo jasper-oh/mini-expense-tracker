@@ -48,6 +48,26 @@ export default class TransactionsController {
         } as ErrorResponse)
       }
 
+      if (amount < 0) {
+        return response.status(400).json({
+          success: false,
+          message: 'Amount must be greater than 0',
+        } as ErrorResponse)
+      }
+
+      if (
+        currency !== 'USD' &&
+        currency !== 'EUR' &&
+        currency !== 'GBP' &&
+        currency !== 'JPY' &&
+        currency !== 'CAD'
+      ) {
+        return response.status(400).json({
+          success: false,
+          message: 'Invalid currency',
+        } as ErrorResponse)
+      }
+
       const transaction = await this.transactionService.createTransaction({
         amount: parseFloat(amount),
         currency,

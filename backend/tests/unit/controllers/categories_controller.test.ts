@@ -4,6 +4,7 @@ import { DateTime } from 'luxon'
 import CategoriesController from '#controllers/categories_controller'
 import CategoryService from '#services/category_service'
 import { CategoryResponse } from '#types/category'
+import db from '@adonisjs/lucid/services/db'
 
 test.group('CategoriesController', (group) => {
   let controller: CategoriesController

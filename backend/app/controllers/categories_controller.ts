@@ -22,7 +22,7 @@ export default class CategoriesController {
       return response.status(500).json({
         success: false,
         message: 'Failed to fetch categories',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : String(error),
       } as ErrorResponse)
     }
   }

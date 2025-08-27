@@ -11,6 +11,9 @@ export default class Transaction extends BaseModel {
   declare amount: number
 
   @column()
+  declare converted_cad: number
+
+  @column()
   declare currency: string
 
   @column.date()
