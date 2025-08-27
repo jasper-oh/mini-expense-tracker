@@ -69,7 +69,7 @@ jobs:
                   DB_PORT: 5432
                   DB_USER: sqlite
               run: timeout 300 node ace test --verbose
-              timeout-minutes: 5
+              timeout-minutes: 1
 
     test-integration:
         runs-on: ubuntu-latest
