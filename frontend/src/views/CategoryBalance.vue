@@ -321,6 +321,16 @@ const filteredBalances = computed(() => {
         );
     }
 
+    const s = filters.value.startDate;
+    const e = filters.value.endDate;
+
+    if (s && e && s > e) {
+        console.log(
+            '[Shows the Error for wrong date filter] You put the wrong date filter!'
+        );
+        return [];
+    }
+
     // Filter by date range
     if (filters.value.startDate || filters.value.endDate) {
         // Get all transactions from the store
