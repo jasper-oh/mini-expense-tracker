@@ -9,6 +9,7 @@
 import router from '@adonisjs/core/services/router'
 import TransactionsController from '#controllers/transactions_controller'
 import CategoriesController from '#controllers/categories_controller'
+import InvoicesController from '#controllers/invoices_controller'
 import jwt from 'jsonwebtoken'
 import './swagger.ts'
 import { middleware } from './kernel.js'
@@ -136,6 +137,29 @@ router.get('/api/transactions/balance', [TransactionsController, 'getBalanceByCa
 
 /**
  * @swagger
+ * /api/transactions/{id}/invoices:
+ *   get:
+ *     summary: Get invoices linked to a transaction
+ *     tags:
+ *       - Invoices
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Numeric ID of the transaction
+ *     responses:
+ *       200:
+ *         description: List of linked invoices
+ */
+router.get('/api/transactions/:id/invoices', [
+  InvoicesController,
+  'getTransactionInvoices',
+] as const)
+
+/**
+ * @swagger
  * /api/categories:
  *   get:
  *     summary: Get all categories
@@ -146,3 +170,61 @@ router.get('/api/transactions/balance', [TransactionsController, 'getBalanceByCa
  *         description: A list of categories
  */
 router.get('/api/categories', [CategoriesController, 'index'] as const)
+
+/**
+ * @swagger
+ * /api/invoices/sync:
+ *   post:
+ *     summary: Sync invoices from Xero API
+ *     tags:
+ *       - Invoices
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Invoices synced successfully
+ *       401:
+ *         description: Unauthorized - Missing or invalid token
+ */
+router
+  .post('/api/invoices/sync', [InvoicesController, 'syncFromXero'] as const)
+  .use([middleware.authJwt()])
+
+/**
+ * @swagger
+ * /api/invoices:
+ *   get:
+ *     summary: Get all invoices
+ *     tags:
+ *       - Invoices
+ *     responses:
+ *       200:
+ *         description: A list of invoices
+ *   post:
+ *     summary: Create a new invoice
+ *     tags:
+ *       - Invoices
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Invoice created
+ *       401:
+ *         description: Unauthorized - Missing or invalid token
+ */
+router
+  .group(() => {
+    router.get('/', [InvoicesController, 'index'] as const)
+    router.post('/', [InvoicesController, 'store'] as const).use([middleware.authJwt()])
+    router.get('/:id', [InvoicesController, 'show'] as const)
+    router.put('/:id', [InvoicesController, 'update'] as const).use([middleware.authJwt()])
+    router.delete('/:id', [InvoicesController, 'destroy'] as const).use([middleware.authJwt()])
+    router.get('/:id/transactions', [InvoicesController, 'getTransactions'] as const)
+    router
+      .post('/link-transaction', [InvoicesController, 'linkTransaction'] as const)
+      .use([middleware.authJwt()])
+    router
+      .delete('/unlink-transaction', [InvoicesController, 'unlinkTransaction'] as const)
+      .use([middleware.authJwt()])
+  })
+  .prefix('/api/invoices')
