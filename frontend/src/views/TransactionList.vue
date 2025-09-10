@@ -196,6 +196,11 @@
                             >
                                 CAD Converted
                             </th>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                            >
+                                Linked Invoices
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -248,6 +253,30 @@
                                 class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium"
                             >
                                 {{ formatNumber(transaction.convertedCad) }} CAD
+                            </td>
+                            <td
+                                class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                            >
+                                <div class="flex flex-wrap gap-1">
+                                    <span
+                                        v-for="invoice in getLinkedInvoices(
+                                            transaction.id
+                                        )"
+                                        :key="invoice.id"
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                    >
+                                        {{ invoice.invoiceNumber }}
+                                    </span>
+                                    <span
+                                        v-if="
+                                            getLinkedInvoices(transaction.id)
+                                                .length === 0
+                                        "
+                                        class="text-gray-400 text-xs"
+                                    >
+                                        None
+                                    </span>
+                                </div>
                             </td>
                         </tr>
                     </tbody>
@@ -352,9 +381,11 @@ import { computed, onMounted, ref, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Transaction } from '../types/Transaction';
 import type { Category } from '../types/Category';
+import type { Invoice } from '../types/Invoice';
 import { useTransactionStore } from '../stores/transactionStore';
 import { useCategoryStore } from '../stores/categoryStore';
 import { useAuthStore } from '../stores/authStore';
+import { useInvoiceStore } from '../stores/invoiceStore';
 import JWTModal from '../components/JWTModal.vue';
 import NoDataDisplay from '../components/NoDataDisplay.vue';
 import {
@@ -368,8 +399,11 @@ const router = useRouter();
 const transactionStore = useTransactionStore();
 const categoryStore = useCategoryStore();
 const authStore = useAuthStore();
+const invoiceStore = useInvoiceStore();
 const transactions = ref<Transaction[]>([]);
 const categories = ref<Category[]>([]);
+const invoices = ref<Invoice[]>([]);
+const linkedInvoices = ref<Record<number, Invoice[]>>({});
 const searchQuery = ref('');
 const selectedCategory = ref('');
 const sortBy = ref('date');
@@ -390,9 +424,14 @@ onMounted(async () => {
     await Promise.all([
         transactionStore.fetchTransactions(),
         categoryStore.fetchCategories(),
+        invoiceStore.fetchInvoices(),
     ]);
     transactions.value = transactionStore.transactions;
     categories.value = categoryStore.categories;
+    invoices.value = invoiceStore.invoices;
+
+    // Load linked invoices for all transactions
+    await loadLinkedInvoices();
 
     // Add storage event listener to detect changes in other tabs/windows
     window.addEventListener('storage', handleStorageChange);
@@ -500,5 +539,34 @@ const handleAddTransactionClick = () => {
         // User is not authenticated, show JWT modal
         showJWTModal.value = true;
     }
+};
+
+// Load linked invoices for all transactions
+const loadLinkedInvoices = async () => {
+    try {
+        const promises = transactions.value.map(async (transaction) => {
+            try {
+                const invoices = await invoiceStore.getTransactionInvoices(
+                    transaction.id
+                );
+                linkedInvoices.value[transaction.id] = invoices;
+            } catch (error) {
+                console.error(
+                    `Failed to load invoices for transaction ${transaction.id}:`,
+                    error
+                );
+                linkedInvoices.value[transaction.id] = [];
+            }
+        });
+
+        await Promise.all(promises);
+    } catch (error) {
+        console.error('Failed to load linked invoices:', error);
+    }
+};
+
+// Get linked invoices for a specific transaction (synchronous)
+const getLinkedInvoices = (transactionId: number): Invoice[] => {
+    return linkedInvoices.value[transactionId] || [];
 };
 </script>

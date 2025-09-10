@@ -2,6 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router';
 import AddTransaction from '../views/AddTransaction.vue';
 import TransactionList from '../views/TransactionList.vue';
 import CategoryBalance from '../views/CategoryBalance.vue';
+import InvoiceList from '../views/InvoiceList.vue';
+import InvoiceDetail from '../views/InvoiceDetail.vue';
+import LinkTransaction from '../views/LinkTransaction.vue';
 
 const routes = [
     {
@@ -22,6 +25,21 @@ const routes = [
         path: '/balance',
         name: 'CategoryBalance',
         component: CategoryBalance,
+    },
+    {
+        path: '/invoices',
+        name: 'InvoiceList',
+        component: InvoiceList,
+    },
+    {
+        path: '/invoices/:id',
+        name: 'InvoiceDetail',
+        component: InvoiceDetail,
+    },
+    {
+        path: '/invoices/:id/link',
+        name: 'LinkTransaction',
+        component: LinkTransaction,
     },
 ];
 
