@@ -6,20 +6,20 @@
             class="block text-sm font-medium text-gray-700"
         >
             {{ label }}
-            <span v-if="required" class="text-red-500">*</span>
+            <span v-if="props.required" class="text-red-500">*</span>
         </label>
 
         <textarea
             :id="id"
             :value="modelValue"
             :placeholder="placeholder"
-            :required="required"
-            :disabled="disabled"
-            :rows="rows"
+            :required="props.required"
+            :disabled="props.disabled"
+            :rows="props.rows"
             :class="[
                 'block w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none',
-                sizeClasses[size],
-                disabled && 'opacity-50 cursor-not-allowed bg-gray-50',
+                sizeClasses[props.size],
+                props.disabled && 'opacity-50 cursor-not-allowed bg-gray-50',
             ]"
             @input="
                 $emit(

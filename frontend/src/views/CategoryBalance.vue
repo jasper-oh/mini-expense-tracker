@@ -399,11 +399,6 @@ const totalBalance = computed(() => {
     );
 });
 
-const averagePerCategory = computed(() => {
-    if (filteredBalances.value.length === 0) return 0;
-    return totalBalance.value / filteredBalances.value.length;
-});
-
 // Check if filters are applied but no results
 const hasActiveFilters = computed(() => {
     return (
