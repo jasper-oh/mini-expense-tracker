@@ -19,17 +19,17 @@
 
             <input
                 :id="id"
-                :type="type"
+                :type="props.type"
                 :value="modelValue"
                 :placeholder="placeholder"
-                :required="required"
-                :disabled="disabled"
+                :required="props.required"
+                :disabled="props.disabled"
                 :min="min"
                 :max="max"
                 :step="step"
                 :class="[
                     'block w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors',
-                    sizeClasses[size],
+                    sizeClasses[props.size],
                     prefix && 'pl-8',
                     disabled && 'opacity-50 cursor-not-allowed bg-gray-50',
                 ]"
