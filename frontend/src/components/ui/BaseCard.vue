@@ -2,7 +2,7 @@
     <div
         :class="[
             'bg-white rounded-lg shadow',
-            paddingClasses[padding],
+            paddingClasses[props.padding],
             hover && 'hover:shadow-lg transition-shadow duration-200',
         ]"
     >
@@ -10,7 +10,7 @@
             <slot name="header" />
         </div>
 
-        <div :class="paddingClasses[padding]">
+        <div :class="paddingClasses[props.padding]">
             <slot />
         </div>
 

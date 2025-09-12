@@ -6,18 +6,18 @@
             class="block text-sm font-medium text-gray-700"
         >
             {{ label }}
-            <span v-if="required" class="text-red-500">*</span>
+            <span v-if="props.required" class="text-red-500">*</span>
         </label>
 
         <select
             :id="id"
             :value="modelValue"
-            :required="required"
-            :disabled="disabled"
+            :required="props.required"
+            :disabled="props.disabled"
             :class="[
                 'block w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors',
-                sizeClasses[size],
-                disabled && 'opacity-50 cursor-not-allowed bg-gray-50',
+                sizeClasses[props.size],
+                props.disabled && 'opacity-50 cursor-not-allowed bg-gray-50',
             ]"
             @change="
                 $emit(
