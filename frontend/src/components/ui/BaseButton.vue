@@ -1,12 +1,12 @@
 <template>
     <button
-        :type="type"
+        :type="props.type"
         :disabled="disabled"
         :class="[
             'px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2',
             'focus:outline-none focus:ring-2 focus:ring-offset-2',
-            sizeClasses[size],
-            variantClasses[variant],
+            sizeClasses[props.size],
+            variantClasses[props.variant],
             disabled && 'opacity-50 cursor-not-allowed',
             fullWidth && 'w-full',
         ]"
