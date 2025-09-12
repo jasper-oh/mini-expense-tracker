@@ -268,7 +268,7 @@ import {
     formatAmount,
     getCategoryColorClass,
     getChartColor,
-} from '../utils';
+} from '@/utils';
 
 interface Filters {
     startDate: string;
@@ -397,11 +397,6 @@ const totalBalance = computed(() => {
         (sum, balance) => sum + balance.total,
         0
     );
-});
-
-const averagePerCategory = computed(() => {
-    if (filteredBalances.value.length === 0) return 0;
-    return totalBalance.value / filteredBalances.value.length;
 });
 
 // Check if filters are applied but no results
