@@ -268,7 +268,7 @@ import {
     formatAmount,
     getCategoryColorClass,
     getChartColor,
-} from '@/utils';
+} from '../utils';
 
 interface Filters {
     startDate: string;
