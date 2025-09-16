@@ -68,6 +68,9 @@ jobs:
                   DB_HOST: localhost
                   DB_PORT: 5432
                   DB_USER: sqlite
+                  XERO_CLIENT_ID: test_client_id
+                  XERO_CLIENT_SECRET: test_client_secret
+                  XERO_REDIRECT_URI: test_redirect_uri
               run: node ace test unit --force-exit
 
     test-integration:
