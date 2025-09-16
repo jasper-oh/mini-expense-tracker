@@ -1,16 +1,22 @@
 import {
-  MockXeroInvoiceResponse,
-  XeroInvoiceResponse,
   InvoiceResponse,
   InvoiceStatus,
   InvoiceType,
+  MockXeroInvoiceResponse,
+  XeroInvoiceResponse,
 } from '#types/invoice'
+import qs from 'qs'
+import Env from '#start/env'
 
 /**
  * Mock Xero API Service
  * Simulates Xero API responses for development and testing
  */
 export class XeroService {
+  private clientId = Env.get('XERO_CLIENT_ID')
+  private clientSecret = Env.get('XERO_CLIENT_SECRET')
+  private redirectUri = Env.get('XERO_REDIRECT_URI')
+
   /**
    * Mock Xero invoices data
    */
@@ -105,6 +111,86 @@ export class XeroService {
       Type: 'ACCREC',
     },
   ]
+
+  async exchangeCodeForToken(code: string): Promise<any> {
+    const data = qs.stringify({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: this.redirectUri,
+    })
+    console.log('Xero token data:', data)
+
+    const authHeader = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')
+
+    try {
+      const response = await fetch('https://identity.xero.com/connect/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${authHeader}`,
+        },
+        body: data,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Xero token error:', errorData)
+        throw new Error('Failed to fetch token')
+      }
+
+      return await response.json()
+    } catch (err: any) {
+      console.error('Xero token error:', err.message)
+      throw new Error(err.message || 'Failed to fetch token')
+    }
+  }
+
+  async connectToTenant(accessToken: string): Promise<any> {
+    try {
+      const response = await fetch('https://api.xero.com/connections', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Xero Connection token error:', errorData)
+        throw new Error('Failed to fetch token')
+      }
+
+      return await response.json()
+    } catch (err: any) {
+      console.error('Xero connect error:', err.message)
+      throw new Error(err.message || 'Failed to connect')
+    }
+  }
+
+  async getInvoices(accessToken: string, tenantId: string): Promise<any> {
+    try {
+      const response = await fetch('https://api.xero.com/api.xro/2.0/Invoices', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'xero-tenant-id': `${tenantId}`,
+          'Accept': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Xero token error:', errorData)
+        throw new Error('Failed to fetch invoices')
+      }
+
+      return await response.json()
+    } catch (err: any) {
+      console.error('Xero fetch Invoices error:', err.message)
+    }
+  }
 
   /**
    * Fetch all invoices from mock Xero API

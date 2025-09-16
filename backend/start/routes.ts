@@ -14,6 +14,7 @@ import jwt from 'jsonwebtoken'
 import './swagger.ts'
 import { middleware } from './kernel.js'
 import env from '#start/env'
+import XeroController from '#controllers/xero_controller'
 
 const JWT_SECRET = env.get('JWT_SECRET')
 
@@ -22,6 +23,10 @@ router.get('/', async () => {
     hello: 'world',
   }
 })
+
+router.post('/api/xero/token', [XeroController, 'store'] as const)
+router.post('/api/xero/getInvoices', [XeroController, 'getInvoices'] as const)
+router.post('/api/xero/getConnection', [XeroController, 'getConnection'] as const)
 
 /**
  * @swagger
