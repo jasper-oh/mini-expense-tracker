@@ -29,6 +29,9 @@ jobs:
               env:
                   NODE_ENV: test
                   VITE_API_BASE_URL: http://localhost:3333
+                  VITE_XERO_CLIENT_ID: test_xero_client_id
+                  VITE_XERO_SCOPE: test_scope
+                  VITE_XERO_REDIRECT_URI: test_uri
               run: npm run test
 
     test-backend:

@@ -90,32 +90,51 @@ export interface LinkTransactionToInvoiceData {
     notes?: string;
 }
 
-// Xero API Types
+// ================== Updated Xero Types ==================
+
+export interface XeroInvoicesResponse {
+    DateTimeUTC: string;
+    Id: string;
+    Invoices: XeroInvoice[];
+    ProviderName: string;
+    Status: string;
+}
+
+export interface XeroInvoice {
+    Type: string;
+    Contact: XeroContact;
+    Date: string;              // comes as "/Date(1518685950940+0000)/"
+    DateString?: string;       // sometimes ISO string
+    DueDate?: string;
+    DueDateString?: string;
+    Status: string;
+    LineAmountTypes: string;
+    LineItems: XeroLineItem[];
+    SubTotal: string;          // numeric but returned as string
+    TotalTax: string;
+    Total: string;
+    UpdatedDateUTC: string;
+    CurrencyCode: string;
+    InvoiceID: string;
+    InvoiceNumber?: string;
+    Payments?: XeroPayment[];
+    AmountDue?: string;
+    AmountPaid?: string;
+    AmountCredited?: string;
+}
+
 export interface XeroContact {
-    ContactID?: string;
+    ContactID: string;
+    ContactStatus?: string;
     Name: string;
     EmailAddress?: string;
     FirstName?: string;
     LastName?: string;
-    CompanyNumber?: string;
-    BankAccountDetails?: string;
-    TaxNumber?: string;
-    AccountsReceivableTaxType?: string;
-    AccountsPayableTaxType?: string;
     Addresses?: XeroAddress[];
     Phones?: XeroPhone[];
-    IsSupplier?: boolean;
-    IsCustomer?: boolean;
-    DefaultCurrency?: string;
-    Website?: string;
-    BrandingTheme?: XeroBrandingTheme;
-    BatchPayments?: XeroBatchPayment;
-    Discount?: number;
-    HasAttachments?: boolean;
-    HasErrors?: boolean;
-    ValidationErrors?: XeroValidationError[];
-    Warnings?: XeroWarning[];
-    StatusAttributeString?: string;
+    UpdatedDateUTC?: string;
+    IsSupplier?: string | boolean;  // API can send "true"/"false" as string
+    IsCustomer?: string | boolean;
 }
 
 export interface XeroAddress {
@@ -138,222 +157,35 @@ export interface XeroPhone {
     PhoneCountryCode?: string;
 }
 
-export interface XeroBrandingTheme {
-    BrandingThemeID?: string;
-    Name?: string;
-    LogoUrl?: string;
-    SortOrder?: number;
-    CreatedDateUTC?: string;
-}
-
-export interface XeroBatchPayment {
-    Account?: XeroAccount;
-    Details?: string;
-    BatchPaymentID?: string;
-    Date?: string;
-    IsReconciled?: boolean;
-    Status?: string;
-    Total?: number;
-    Type?: string;
-    Reference?: string;
-    BankTransactionID?: string;
-    BatchPaymentType?: string;
-    StatusAttributeString?: string;
-    HasAttachments?: boolean;
-}
-
-export interface XeroAccount {
-    Code?: string;
-    Name?: string;
-    AccountID?: string;
-    Type?: string;
-    BankAccountNumber?: string;
-    Status?: string;
-    Description?: string;
-    BankAccountType?: string;
-    CurrencyCode?: string;
-    TaxType?: string;
-    EnablePaymentsToAccount?: boolean;
-    ShowInExpenseClaims?: boolean;
-    Class?: string;
-    SystemAccount?: string;
-    ReportingCode?: string;
-    ReportingCodeName?: string;
-    HasAttachments?: boolean;
-}
-
-export interface XeroValidationError {
-    Message?: string;
-}
-
-export interface XeroWarning {
-    Message?: string;
-}
-
 export interface XeroLineItem {
-    LineItemID?: string;
-    Description?: string;
-    Quantity?: number;
-    UnitAmount?: number;
-    AccountCode?: string;
+    LineItemID: string;
     ItemCode?: string;
+    Description?: string;
+    Quantity?: string;         // numeric but returned as string
+    UnitAmount?: string;
+    AccountCode?: string;
+    AccountId?: string;
     TaxType?: string;
-    TaxAmount?: number;
-    LineAmount?: number;
-    DiscountRate?: number;
-    DiscountAmount?: number;
-    RepeatingInvoiceID?: string;
+    TaxAmount?: string;
+    LineAmount?: string;
+    Item?: XeroItem;
+    Tracking?: XeroTracking[];
+}
+
+export interface XeroItem {
+    ItemID: string;
+    Name: string;
+    Code: string;
+}
+
+export interface XeroTracking {
+    TrackingCategoryID: string;
+    Name: string;
+    Option: string;
 }
 
 export interface XeroPayment {
-    PaymentID?: string;
-    Invoice?: XeroInvoiceResponse;
-    Account?: XeroAccount;
-    Date?: string;
-    Amount?: number;
-    CurrencyRate?: number;
-    PaymentType?: string;
-    Status?: string;
-    IsReconciled?: boolean;
-    Reference?: string;
-    UpdatedDateUTC?: string;
-    PaymentTypeID?: string;
-}
-
-export interface XeroCreditNote {
-    CreditNoteID?: string;
-    CreditNoteNumber?: string;
-    Type?: string;
-    Status?: string;
-    LineAmountTypes?: string;
-    Date?: string;
-    DueDate?: string;
-    Reference?: string;
-    CurrencyCode?: string;
-    CurrencyRate?: number;
-    SubTotal?: number;
-    TotalTax?: number;
-    Total?: number;
-    AmountDue?: number;
-    AmountPaid?: number;
-    AmountCredited?: number;
-    UpdatedDateUTC?: string;
-    BrandingThemeID?: string;
-    HasAttachments?: boolean;
-    HasErrors?: boolean;
-    ValidationErrors?: XeroValidationError[];
-    Warnings?: XeroWarning[];
-    StatusAttributeString?: string;
-}
-
-export interface XeroPrepayment {
-    PrepaymentID?: string;
-    Type?: string;
-    Contact?: XeroContact;
-    Date?: string;
-    Status?: string;
-    LineAmountTypes?: string;
-    SubTotal?: number;
-    TotalTax?: number;
-    Total?: number;
-    CurrencyCode?: string;
-    CurrencyRate?: number;
-    Reference?: string;
-    UpdatedDateUTC?: string;
-    BrandingThemeID?: string;
-    HasAttachments?: boolean;
-    HasErrors?: boolean;
-    ValidationErrors?: XeroValidationError[];
-    Warnings?: XeroWarning[];
-    StatusAttributeString?: string;
-}
-
-export interface XeroOverpayment {
-    OverpaymentID?: string;
-    Type?: string;
-    Contact?: XeroContact;
-    Date?: string;
-    Status?: string;
-    LineAmountTypes?: string;
-    SubTotal?: number;
-    TotalTax?: number;
-    Total?: number;
-    CurrencyCode?: string;
-    CurrencyRate?: number;
-    Reference?: string;
-    UpdatedDateUTC?: string;
-    BrandingThemeID?: string;
-    HasAttachments?: boolean;
-    HasErrors?: boolean;
-    ValidationErrors?: XeroValidationError[];
-    Warnings?: XeroWarning[];
-    StatusAttributeString?: string;
-}
-
-export interface XeroCISDeduction {
-    CISDeductionID?: string;
-    Contact?: XeroContact;
-    DeductionDate?: string;
-    Total?: number;
-    Status?: string;
-    HasAttachments?: boolean;
-    HasErrors?: boolean;
-    ValidationErrors?: XeroValidationError[];
-    Warnings?: XeroWarning[];
-    StatusAttributeString?: string;
-}
-
-export interface XeroInvoiceAddress {
-    AddressType?: string;
-    AddressLine1?: string;
-    AddressLine2?: string;
-    AddressLine3?: string;
-    AddressLine4?: string;
-    City?: string;
-    Region?: string;
-    PostalCode?: string;
-    Country?: string;
-    AttentionTo?: string;
-}
-
-export interface XeroInvoiceResponse {
-    Type?: string;
-    Contact?: XeroContact;
-    Date?: string;
-    DueDate?: string;
-    Status?: string;
-    LineAmountTypes?: string;
-    LineItems?: XeroLineItem[];
-    SubTotal?: number;
-    TotalTax?: number;
-    Total?: number;
-    TotalDiscount?: number;
-    UpdatedDateUTC?: string;
-    CurrencyCode?: string;
-    CurrencyRate?: number;
-    InvoiceID?: string;
-    InvoiceNumber?: string;
-    Reference?: string;
-    BrandingThemeID?: string;
-    Url?: string;
-    SentToContact?: boolean;
-    ExpectedPaymentDate?: string;
-    PlannedPaymentDate?: string;
-    HasAttachments?: boolean;
-    RepeatingInvoiceID?: string;
-    Payments?: XeroPayment[];
-    CreditNotes?: XeroCreditNote[];
-    Prepayments?: XeroPrepayment[];
-    Overpayments?: XeroOverpayment[];
-    AmountDue?: number;
-    AmountPaid?: number;
-    CISDeduction?: XeroCISDeduction;
-    FullyPaidOnDate?: string;
-    AmountCredited?: number;
-    SalesTaxCalculationTypeCode?: string;
-    InvoiceAddresses?: XeroInvoiceAddress[];
-    HasErrors?: boolean;
-    ValidationErrors?: XeroValidationError[];
-    Warnings?: XeroWarning[];
-    StatusAttributeString?: string;
+    PaymentID: string;
+    Date: string;
+    Amount: string;
 }

@@ -9,6 +9,8 @@ export const useAuthStore = defineStore('auth', {
         token: null as string | null,
         loading: false,
         error: null as string | null,
+        xero_accessToken: null as string | null,
+        xero_tenant_id: null as string | null,
     }),
 
     getters: {
@@ -110,6 +112,61 @@ export const useAuthStore = defineStore('auth', {
                 // Remove invalid token from sessionStorage
                 sessionStorage.removeItem('jwt_token');
                 return false;
+            }
+        },
+
+        async getTokenFromXero(data: string): Promise<any> {
+            try {
+                const response = await axios.post(
+                    `${API_BASE_URL}/api/xero/token`,
+                    {code: data},
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    }
+                );
+
+                if (response.data) {
+                    return response.data;
+                }
+            } catch (err: any) {
+                console.error('Error fetching Xero token: ', err);
+                throw err;
+            }
+        },
+
+        async getConnections(): Promise<any> {
+            try {
+                const response = await axios.post(
+                    `${API_BASE_URL}/api/xero/getConnection`,
+                    {accessToken: this.xero_accessToken},
+                );
+                if (response.data) {
+                    return response.data;
+                }
+            } catch (err: any) {
+                console.error('Error fetching Xero connection: ', err );
+                throw err;
+            }
+        },
+
+        async getInvoices(): Promise<any> {
+            try {
+                const response = await axios.post(
+                    `${API_BASE_URL}/api/xero/getInvoices`,
+                    {
+                        accessToken: this.xero_accessToken,
+                        tenantId: this.xero_tenant_id,
+                    },
+                );
+
+                if (response.data) {
+                    return response.data.Invoices;
+                }
+            } catch (err: any) {
+                console.error('Error fetching Xero connection: ', err);
+                throw err;
             }
         },
 

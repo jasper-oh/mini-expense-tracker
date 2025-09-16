@@ -24,11 +24,24 @@
                     <span>Authenticated</span>
                 </div>
                 <button
+                  @click="handleLoginToXero"
+                  :disabled="loading"
+                  :class="[
+                      'px-6 py-3 rounded-lg transition-colors font-medium flex items-center space-x-2',
+                      !loading
+                          ? 'bg-gray-400 text-white cursor-not-allowed'
+                          : 'bg-blue-600 text-white hover:bg-blue-700',
+                  ]"
+                >
+                  <span>Login to Xero</span>
+                </button>
+
+                <button
                     @click="handleSyncFromXero"
-                    :disabled="!isAuthenticated || loading"
+                    :disabled="loading"
                     :class="[
                         'px-6 py-3 rounded-lg transition-colors font-medium flex items-center space-x-2',
-                        isAuthenticated && !loading
+                        !loading
                             ? 'bg-blue-600 text-white hover:bg-blue-700'
                             : 'bg-gray-400 text-white cursor-not-allowed',
                     ]"
@@ -512,14 +525,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import type { Invoice } from '../types/Invoice';
-import { useInvoiceStore } from '../stores/invoiceStore';
-import { useAuthStore } from '../stores/authStore';
+import {computed, onMounted, ref} from 'vue';
+import {useRouter} from 'vue-router';
+import type {Invoice, XeroInvoice} from '../types/Invoice';
+import {useInvoiceStore} from '../stores/invoiceStore';
+import {useAuthStore} from '../stores/authStore';
 import JWTModal from '../components/JWTModal.vue';
 import NoDataDisplay from '../components/NoDataDisplay.vue';
-import { formatCurrency, formatDate } from '../utils';
+import {formatCurrency, formatDate} from '../utils';
+import {mapXeroInvoice} from "../utils/mappers/XeroInvoiceMapper.ts";
 
 const router = useRouter();
 const invoiceStore = useInvoiceStore();
@@ -533,6 +547,10 @@ const sortBy = ref('date');
 const showJWTModal = ref(false);
 const showSuccessMessage = ref(false);
 const successMessage = ref('');
+
+const XERO_CLIENT_ID = import.meta.env.VITE_XERO_CLIENT_ID;
+const XERO_SCOPE = import.meta.env.VITE_XERO_SCOPE;
+const XERO_REDIRECT_URI = import.meta.env.VITE_XERO_REDIRECT_URI;
 
 // Computed properties
 const isAuthenticated = computed(() => authStore.isAuthenticated);
@@ -616,15 +634,50 @@ const getTypeBadgeClass = (type: string) => {
     return classes[type as keyof typeof classes] || 'bg-gray-100 text-gray-800';
 };
 
-const handleSyncFromXero = async () => {
-    if (!isAuthenticated.value) {
-        showJWTModal.value = true;
-        return;
-    }
+const handleLoginToXero = () => {
+  const clientId = XERO_CLIENT_ID;
+  const redirectUri = encodeURIComponent(`${XERO_REDIRECT_URI}`);
+  const scope = XERO_SCOPE
+  const state = Math.random().toString(36).substring(2);
 
+  localStorage.setItem('xero_state', state);
+  window.location.href = `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`;
+}
+
+const handleXeroCallback = async () => {
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const state = urlParams.get('state');
+  const savedState = localStorage.getItem('xero_state');
+
+  if (state !== savedState) {
+    alert('Invalid state!');
+    return;
+  }
+
+  if (code) {
     try {
-        await invoiceStore.syncFromXero();
-        invoices.value = invoiceStore.invoices;
+      const tokenData = await authStore.getTokenFromXero( code );
+
+      if (tokenData?.access_token) {
+        localStorage.setItem('xero_token', tokenData.access_token);
+        authStore.xero_accessToken = tokenData.access_token;
+      }
+      const connectionInfo = await authStore.getConnections();
+      authStore.xero_tenant_id = connectionInfo[0].tenantId
+
+    } catch (err) {
+      console.error('Error handling Xero callback:', err);
+    }
+  }
+};
+
+const handleSyncFromXero = async () => {
+    try {
+        const invoicesResponse: XeroInvoice[] = await authStore.getInvoices();
+
+        invoices.value = invoicesResponse.map(invoice => mapXeroInvoice(invoice));
         successMessage.value = 'Invoices synced successfully from Xero!';
         showSuccessMessage.value = true;
         setTimeout(() => {
@@ -665,13 +718,15 @@ const linkTransaction = (id: number) => {
 };
 
 onMounted(async () => {
-    try {
-        await invoiceStore.fetchInvoices();
-        invoices.value = invoiceStore.invoices;
+  if (window.location.search.includes('code=')) {
+    await handleXeroCallback();
+  }
 
-        console.log(invoices.value.map((invoice) => typeof invoice.subTotal));
-    } catch (error) {
-        console.error('Failed to fetch invoices:', error);
-    }
+  try {
+    await invoiceStore.fetchInvoices();
+    invoices.value = invoiceStore.invoices;
+  } catch (error) {
+    console.error('Failed to fetch invoices:', error);
+  }
 });
 </script>
