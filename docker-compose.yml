@@ -35,6 +35,9 @@ services:
             DB_PASSWORD: postgres
             DB_DATABASE: expense_tracker
             JWT_SECRET: 'alskjdclkwjebflakjsdclakwjenfglaksjdcnlakwejfbalksjdfblaaclwkjebflaksdjfblwkejcb'
+            XERO_CLIENT_ID: ''
+            XERO_CLIENT_SECRET: ''
+            XERO_REDIRECT_URI: ''
         depends_on:
             postgres:
                 condition: service_healthy
