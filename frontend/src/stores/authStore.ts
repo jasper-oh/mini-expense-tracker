@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         isAuthenticated: false,
+        isAuthenticated_Xero: false,
         token: null as string | null,
         loading: false,
         error: null as string | null,

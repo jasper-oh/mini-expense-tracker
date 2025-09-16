@@ -23,59 +23,56 @@
                     </svg>
                     <span>Authenticated</span>
                 </div>
-                <button
-                  @click="handleLoginToXero"
-                  :disabled="loading"
+              <button
+                  @click="isXeroAuthenticated ? handleSyncFromXero() : handleLoginToXero()"
+                  :disabled="loading || (isXeroAuthenticated ? false : isXeroAuthenticated)"
                   :class="[
-                      'px-6 py-3 rounded-lg transition-colors font-medium flex items-center space-x-2',
-                      !loading
-                          ? 'bg-gray-400 text-white cursor-not-allowed'
-                          : 'bg-blue-600 text-white hover:bg-blue-700',
+                    'px-6 py-3 rounded-lg transition-colors font-medium flex items-center space-x-2',
+                    loading
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700',
                   ]"
-                >
-                  <span>Login to Xero</span>
-                </button>
+                              >
+                                <!-- Spinner for syncing -->
+                                <svg
+                                    v-if="loading"
+                                    class="w-5 h-5 animate-spin"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                  <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                  ></path>
+                                </svg>
 
-                <button
-                    @click="handleSyncFromXero"
-                    :disabled="loading"
-                    :class="[
-                        'px-6 py-3 rounded-lg transition-colors font-medium flex items-center space-x-2',
-                        !loading
-                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                            : 'bg-gray-400 text-white cursor-not-allowed',
-                    ]"
-                >
-                    <svg
-                        v-if="loading"
-                        class="w-5 h-5 animate-spin"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        ></path>
-                    </svg>
-                    <svg
-                        v-else
-                        class="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        ></path>
-                    </svg>
-                    <span>{{ loading ? 'Syncing...' : 'Sync from Xero' }}</span>
-                </button>
+                                <!-- Sync icon when authenticated -->
+                                <svg
+                                    v-else-if="isXeroAuthenticated"
+                                    class="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                  <path
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                  ></path>
+                                </svg>
+
+                                <!-- Default login text -->
+                                <span>
+                    <template v-if="loading">Syncing...</template>
+                    <template v-else-if="isXeroAuthenticated">Sync from Xero</template>
+                    <template v-else>Login to Xero</template>
+                  </span>
+              </button>
+
                 <button
                     @click="handleAddInvoiceClick"
                     :class="[
@@ -554,6 +551,7 @@ const XERO_REDIRECT_URI = import.meta.env.VITE_XERO_REDIRECT_URI;
 
 // Computed properties
 const isAuthenticated = computed(() => authStore.isAuthenticated);
+const isXeroAuthenticated = computed(() => authStore.isAuthenticated_Xero);
 const loading = computed(() => invoiceStore.loading);
 const totalOutstanding = computed(() => invoiceStore.totalOutstanding);
 const totalPaid = computed(() => invoiceStore.totalPaid);
@@ -666,6 +664,7 @@ const handleXeroCallback = async () => {
       }
       const connectionInfo = await authStore.getConnections();
       authStore.xero_tenant_id = connectionInfo[0].tenantId
+      authStore.isAuthenticated_Xero = true
 
     } catch (err) {
       console.error('Error handling Xero callback:', err);
