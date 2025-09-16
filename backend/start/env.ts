@@ -18,6 +18,9 @@ export default await Env.create(new URL('../', import.meta.url), {
   HOST: Env.schema.string({ format: 'host' }),
   LOG_LEVEL: Env.schema.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']),
   JWT_SECRET: Env.schema.string(),
+  XERO_CLIENT_ID: Env.schema.string(),
+  XERO_CLIENT_SECRET: Env.schema.string(),
+  XERO_REDIRECT_URI: Env.schema.string(),
 
   /*
   |----------------------------------------------------------
